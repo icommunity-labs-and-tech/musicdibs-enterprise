@@ -8,8 +8,8 @@ on:
 
 env:
   VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+  VERCEL_ORG_ID: team_HkswivMeKHr8orSfHV1UxJUP
   VERCEL_PROJECT_ID: prj_bfx2RV2gLDDQrIioe2RYE8c1FpIC
-  VERCEL_TEAM_ID: team_HkswivMeKHr8orSfHV1UxJUP
 
 jobs:
   deploy:
@@ -22,21 +22,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
 
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
 
-      - name: Deploy to Vercel (Preview on PR / Production on main)
-        run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
-            vercel deploy --prod \
-              --token=$VERCEL_TOKEN \
-              --scope=$VERCEL_TEAM_ID \
-              --yes
-          else
-            vercel deploy \
-              --token=$VERCEL_TOKEN \
-              --scope=$VERCEL_TEAM_ID \
-              --yes
-          fi
+      - name: Deploy Production (main)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: vercel deploy --prod --token=$VERCEL_TOKEN --yes
+
+      - name: Deploy Preview (PR)
+        if: github.event_name == 'pull_request'
+        run: vercel deploy --token=$VERCEL_TOKEN --yes
