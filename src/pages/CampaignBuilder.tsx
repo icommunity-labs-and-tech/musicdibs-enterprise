@@ -535,4 +535,15 @@ function LaunchSuccess({ onQueue, onNew }: { onQueue: () => void; onNew: () => v
       <p className="text-sand-900/60 dark:text-night-50/60 text-sm mb-8">
         1,247 assets comenzando a generarse · ~2h estimadas
       </p>
-      <div className="flex flex-col 
+      <div className="flex flex-col gap-3">
+        <button onClick={onQueue} className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-lg bg-[#C9973A] text-white font-semibold text-sm hover:bg-[#b8832e] transition-all">
+          <i className="ti ti-list-check" />
+          Ver cola de generación
+        </button>
+        <button onClick={onNew} className="inline-flex items-center justify-center gap-2 w-full px-4 py-2 rounded-lg text-sm font-medium text-sand-900/70 dark:text-white/70 hover:bg-black/5 dark:hover:bg-white/5 transition-all">
+          Crear otra campaña
+        </button>
+      </div>
+    </div>
+  )
+}
