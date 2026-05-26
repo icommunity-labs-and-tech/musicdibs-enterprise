@@ -5,6 +5,7 @@ import { startOfMonth } from 'date-fns'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn, formatNumber } from '@/lib/utils'
+import { useToast } from '@/store/toastStore'
 
 // ── types ────────────────────────────────────────────────────────────────────
 interface TenantSettings {
@@ -555,6 +556,7 @@ function BillingSection({ tenant }: { tenant: NonNullable<ReturnType<typeof useA
 export function Settings() {
   const { tenant, user, refreshTenant } = useAuth()
   const qc = useQueryClient()
+  const toast = useToast()
   const [searchParams, setSearchParams] = useSearchParams()
   const billingResult = searchParams.get('billing') // 'success' | 'cancel'
 
@@ -634,8 +636,6 @@ export function Settings() {
   const [sunoKey, setSunoKey] = useState('')
   const [mailerliteKey, setMailerliteKey] = useState('')
   const [integrations, setIntegrations] = useState<TenantSettings['integrations']>({})
-  const [orgSaveState, setOrgSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
-  const [keysSaveState, setKeysSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
   // ── sync state when data loads ──
   useEffect(() => {
@@ -670,15 +670,12 @@ export function Settings() {
       if (r1.error) throw r1.error
       if (r2.error) throw r2.error
     },
-    onMutate: () => setOrgSaveState('saving'),
     onSuccess: () => {
-      setOrgSaveState('saved')
       qc.invalidateQueries({ queryKey: ['tenant_settings'] })
-      setTimeout(() => setOrgSaveState('idle'), 2500)
+      toast.success('Organización guardada', 'Los cambios se han guardado correctamente.')
     },
-    onError: () => {
-      setOrgSaveState('error')
-      setTimeout(() => setOrgSaveState('idle'), 3000)
+    onError: (err: any) => {
+      toast.error('Error al guardar', err?.message ?? 'Inténtalo de nuevo.')
     },
   })
 
@@ -695,15 +692,12 @@ export function Settings() {
       }, { onConflict: 'tenant_id' })
       if (error) throw error
     },
-    onMutate: () => setKeysSaveState('saving'),
     onSuccess: () => {
-      setKeysSaveState('saved')
       qc.invalidateQueries({ queryKey: ['tenant_settings'] })
-      setTimeout(() => setKeysSaveState('idle'), 2500)
+      toast.success('Claves API guardadas', 'Las claves se han actualizado correctamente.')
     },
-    onError: () => {
-      setKeysSaveState('error')
-      setTimeout(() => setKeysSaveState('idle'), 3000)
+    onError: (err: any) => {
+      toast.error('Error al guardar claves', err?.message ?? 'Inténtalo de nuevo.')
     },
   })
 
@@ -782,7 +776,6 @@ export function Settings() {
           <Input value={supportEmail} onChange={setSupportEmail} placeholder="hello@empresa.com" />
         </Field>
         <div className="flex items-center justify-end gap-3 pt-3">
-          <SaveFeedback state={orgSaveState} />
           <button
             onClick={() => saveOrg.mutate()}
             disabled={saveOrg.isPending}
@@ -817,7 +810,6 @@ export function Settings() {
           placeholder="suno_…"
         />
         <div className="flex items-center justify-end gap-3 pt-3">
-          <SaveFeedback state={keysSaveState} />
           <button
             onClick={() => saveKeys.mutate()}
             disabled={saveKeys.isPending}
@@ -839,7 +831,6 @@ export function Settings() {
           placeholder="mlite_…"
         />
         <div className="flex items-center justify-end gap-3 pt-3">
-          <SaveFeedback state={keysSaveState} />
           <button
             onClick={() => saveKeys.mutate()}
             disabled={saveKeys.isPending}

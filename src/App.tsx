@@ -13,6 +13,7 @@ import { CampaignDetail } from '@/pages/CampaignDetail'
 import { Login } from '@/pages/Login'
 import { Landing } from '@/pages/Landing'
 import { useThemeStore } from '@/store/themeStore'
+import { ToastContainer } from '@/components/ToastContainer'
 
 function AppRoutes() {
   return (
@@ -52,6 +53,7 @@ export default function App() {
   return (
     <AuthProvider>
       <AppRoutes />
+      <ToastContainer />
     </AuthProvider>
   )
 }

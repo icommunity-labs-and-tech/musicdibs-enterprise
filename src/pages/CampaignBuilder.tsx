@@ -4,6 +4,7 @@ import { useCampaignStore, type CampaignDraft } from '@/store/campaignStore'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { formatCurrency, cn } from '@/lib/utils'
+import { useToast } from '@/store/toastStore'
 
 type DraftUpdater = (patch: Partial<CampaignDraft>) => void
 
@@ -31,6 +32,7 @@ export function CampaignBuilder() {
   const navigate = useNavigate()
   const { draft, updateDraft, nextStep, prevStep, resetDraft } = useCampaignStore()
   const { tenant, user } = useAuth()
+  const toast = useToast()
   const [launching, setLaunching] = useState(false)
   const [launched, setLaunched] = useState(false)
   const [launchError, setLaunchError] = useState<string | null>(null)
@@ -88,8 +90,11 @@ export function CampaignBuilder() {
 
       setCampaignId(campaign.id)
       setLaunched(true)
+      toast.success('Campaña lanzada', `"${draft.name || 'Nueva campaña'}" está en cola de generación.`)
     } catch (err) {
-      setLaunchError(err instanceof Error ? err.message : 'Error desconocido')
+      const msg = err instanceof Error ? err.message : 'Error desconocido'
+      setLaunchError(msg)
+      toast.error('Error al lanzar campaña', msg)
     } finally {
       setLaunching(false)
     }

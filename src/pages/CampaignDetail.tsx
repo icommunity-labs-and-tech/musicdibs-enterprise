@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn, formatCurrency, formatNumber, formatPercent } from '@/lib/utils'
 import type { Campaign, CampaignStats, GenerationJob } from '@/lib/supabase'
+import { useToast } from '@/store/toastStore'
 
 // ── label maps ────────────────────────────────────────────────────────────────
 const STATUS_LABELS: Record<Campaign['status'], string> = {
@@ -141,6 +142,7 @@ function exportCampaignCSV(
 export function CampaignDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const toast = useToast()
   const { tenant } = useAuth()
 
   const { data, isLoading, error } = useQuery({
@@ -228,7 +230,10 @@ export function CampaignDetail() {
           {/* primary CTAs */}
           <div className="flex items-center gap-2 shrink-0">
             <button
-              onClick={() => exportCampaignCSV(c, stats, jobs)}
+              onClick={() => {
+                exportCampaignCSV(c, stats, jobs)
+                toast.success('CSV exportado', `Campaña "${c.name}" descargada.`)
+              }}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-sand-200 dark:border-night-600 text-sand-900/60 dark:text-night-50/60 hover:text-sand-900 dark:hover:text-night-50 text-sm font-medium transition-colors"
               title="Exportar CSV"
             >
