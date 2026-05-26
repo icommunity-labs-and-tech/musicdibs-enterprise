@@ -257,7 +257,10 @@ function CampaignRow({ campaign: c, navigate }: { campaign: Campaign; navigate: 
     <tr className="hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors group">
       {/* Name */}
       <td className="px-5 py-4 max-w-xs">
-        <p className="font-sans font-medium text-sand-900 dark:text-night-50 truncate">{c.name}</p>
+        <p
+          className="font-sans font-medium text-sand-900 dark:text-night-50 truncate hover:text-gold-600 dark:hover:text-gold-400 cursor-pointer transition-colors"
+          onClick={() => navigate(`/campaigns/${c.id}`)}
+        >{c.name}</p>
         <p className="text-xs text-sand-900/40 dark:text-night-50/40 mt-0.5 capitalize">{c.type}</p>
       </td>
 
@@ -303,10 +306,11 @@ function CampaignRow({ campaign: c, navigate }: { campaign: Campaign; navigate: 
             </button>
           )}
           <button
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-sand-900/30 dark:text-night-50/30 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-            title="Más opciones"
+            onClick={() => navigate(`/campaigns/${c.id}`)}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-sand-900/30 dark:text-night-50/30 hover:bg-black/5 dark:hover:bg-white/5 hover:text-sand-900 dark:hover:text-night-50 transition-colors"
+            title="Ver detalle"
           >
-            <i className="ti ti-dots-vertical text-sm" />
+            <i className="ti ti-arrow-right text-sm" />
           </button>
         </div>
       </td>

@@ -9,6 +9,7 @@ import { CampaignBuilder } from '@/pages/CampaignBuilder'
 import { GenerationQueue } from '@/pages/GenerationQueue'
 import { Analytics } from '@/pages/Analytics'
 import { Settings } from '@/pages/Settings'
+import { CampaignDetail } from '@/pages/CampaignDetail'
 import { Login } from '@/pages/Login'
 import { useThemeStore } from '@/store/themeStore'
 
@@ -26,6 +27,7 @@ function AppRoutes() {
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/campaigns" element={<Campaigns />} />
                 <Route path="/campaigns/new" element={<CampaignBuilder />} />
+                <Route path="/campaigns/:id" element={<CampaignDetail />} />
                 <Route path="/campaigns/:id/queue" element={<GenerationQueue />} />
                 <Route path="/analytics" element={<Analytics />} />
                 <Route path="/settings" element={<Settings />} />
