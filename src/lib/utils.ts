@@ -22,4 +22,5 @@ export function formatPercent(n: number) {
 }
 
 export function costPerContact(total: number, contacts: number) {
-  return contac
+  return contacts > 0 ? total / contacts : 0
+}
