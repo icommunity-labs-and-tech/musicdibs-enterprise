@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router-dom'
+import { startOfMonth } from 'date-fns'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
-import { cn } from '@/lib/utils'
+import { cn, formatNumber } from '@/lib/utils'
 
 // ── types ────────────────────────────────────────────────────────────────────
 interface TenantSettings {
@@ -308,6 +310,22 @@ function BillingSection({ tenant }: { tenant: NonNullable<ReturnType<typeof useA
   const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly')
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
 
+  const { data: usage } = useQuery({
+    queryKey: ['billing_usage', tenant.id],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
+      const [{ count }, { data: stats }] = await Promise.all([
+        supabase.from('campaigns').select('id', { count: 'exact', head: true })
+          .eq('tenant_id', tenant.id).gte('created_at', monthStart),
+        supabase.from('campaign_stats').select('emails_sent, cost_actual').eq('tenant_id', tenant.id),
+      ])
+      const sent = (stats ?? []).reduce((a, s) => a + (s.emails_sent ?? 0), 0)
+      const cost = (stats ?? []).reduce((a, s) => a + (s.cost_actual ?? 0), 0)
+      return { campaigns: count ?? 0, contactos: sent, coste: cost }
+    },
+  })
+
   const currentPlan = tenant.plan ?? 'starter'
   const stripeStatus = tenant.stripe_status
   const hasActiveSub = !!tenant.stripe_subscription_id && stripeStatus === 'active'
@@ -387,6 +405,21 @@ function BillingSection({ tenant }: { tenant: NonNullable<ReturnType<typeof useA
             Gestionar suscripción
           </button>
         )}
+      </div>
+
+      {/* Usage mini-stats */}
+      <div className="grid grid-cols-3 gap-2">
+        {[
+          { label: 'Campañas este mes', value: usage ? usage.campaigns.toString() : '—', icon: 'ti-campaign' },
+          { label: 'Contactos alcanzados', value: usage ? (usage.contactos >= 1000 ? `${(usage.contactos/1000).toFixed(1)}k` : usage.contactos.toString()) : '—', icon: 'ti-users' },
+          { label: 'Coste acumulado', value: usage ? `€${usage.coste.toFixed(0)}` : '—', icon: 'ti-coin-euro' },
+        ].map(({ label, value, icon }) => (
+          <div key={label} className="bg-sand-50 dark:bg-night-700/50 rounded-xl p-3">
+            <i className={`ti ${icon} text-sm text-sand-900/30 dark:text-night-50/30`} />
+            <p className="font-display text-lg font-semibold text-sand-900 dark:text-night-50 mt-1 tabular-nums">{value}</p>
+            <p className="text-[10px] text-sand-900/40 dark:text-night-50/40 mt-0.5 leading-tight">{label}</p>
+          </div>
+        ))}
       </div>
 
       {/* Billing toggle */}
@@ -520,8 +553,46 @@ function BillingSection({ tenant }: { tenant: NonNullable<ReturnType<typeof useA
 
 // ── main component ────────────────────────────────────────────────────────────
 export function Settings() {
-  const { tenant, user } = useAuth()
+  const { tenant, user, refreshTenant } = useAuth()
   const qc = useQueryClient()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const billingResult = searchParams.get('billing') // 'success' | 'cancel'
+
+  // Clear billing param + refresh tenant after Stripe redirect
+  useEffect(() => {
+    if (billingResult) {
+      if (billingResult === 'success') refreshTenant()
+      const t = setTimeout(() => {
+        searchParams.delete('billing')
+        setSearchParams(searchParams, { replace: true })
+      }, 5000)
+      return () => clearTimeout(t)
+    }
+  }, [billingResult])
+
+  // Usage metrics for current month
+  const { data: usageData } = useQuery({
+    queryKey: ['settings_usage', tenant?.id],
+    enabled: !!tenant?.id,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const monthStart = startOfMonth(new Date()).toISOString()
+      const [{ count: campaignCount }, { data: stats }] = await Promise.all([
+        supabase
+          .from('campaigns')
+          .select('id', { count: 'exact', head: true })
+          .eq('tenant_id', tenant!.id)
+          .gte('created_at', monthStart),
+        supabase
+          .from('campaign_stats')
+          .select('emails_sent, cost_actual')
+          .eq('tenant_id', tenant!.id),
+      ])
+      const totalSent = (stats ?? []).reduce((acc, s) => acc + (s.emails_sent ?? 0), 0)
+      const totalCost = (stats ?? []).reduce((acc, s) => acc + (s.cost_actual ?? 0), 0)
+      return { campaigns: campaignCount ?? 0, contactos: totalSent, coste: totalCost }
+    },
+  })
 
   // ── fetch settings ──
   const { data: settings, isLoading } = useQuery<TenantSettings>({
@@ -672,6 +743,29 @@ export function Settings() {
           Gestiona tu organización, integraciones y equipo
         </p>
       </div>
+
+      {/* Billing result banner */}
+      {billingResult === 'success' && (
+        <div className="flex items-center gap-3 p-4 rounded-2xl bg-teal-50 dark:bg-teal-900/10 border border-teal-200 dark:border-teal-800/40">
+          <div className="w-8 h-8 rounded-xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center shrink-0">
+            <i className="ti ti-check text-base text-teal-600 dark:text-teal-400" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-teal-700 dark:text-teal-300">¡Suscripción activada!</p>
+            <p className="text-xs text-teal-600/70 dark:text-teal-400/70 mt-0.5">
+              Tu plan ha sido actualizado. Los cambios ya están activos.
+            </p>
+          </div>
+        </div>
+      )}
+      {billingResult === 'cancel' && (
+        <div className="flex items-center gap-3 p-4 rounded-2xl bg-sand-50 dark:bg-night-700/50 border border-sand-200 dark:border-night-600">
+          <i className="ti ti-info-circle text-base text-sand-400 shrink-0" />
+          <p className="text-sm text-sand-900/60 dark:text-night-50/60">
+            Pago cancelado. Tu plan actual permanece sin cambios.
+          </p>
+        </div>
+      )}
 
       {/* ── Organización ── */}
       <SectionCard title="Organización">

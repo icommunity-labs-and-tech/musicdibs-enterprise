@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase, type Profile, type Tenant } from '@/lib/supabase'
 
@@ -8,6 +8,7 @@ interface AuthContextType {
   profile: Profile | null
   tenant: Tenant | null
   loading: boolean
+  refreshTenant: () => Promise<void>
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
 }
@@ -46,6 +47,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [tenant, setTenant] = useState<Tenant | null>(null)
   const [loading, setLoading] = useState(true)
 
+  // ── Refresh tenant from DB (called after Stripe checkout) ──────────────────
+  const refreshTenant = useCallback(async () => {
+    if (!profile?.tenant_id) return
+    const { data } = await supabase
+      .from('tenants')
+      .select('*')
+      .eq('id', profile.tenant_id)
+      .single()
+    if (data) setTenant(data as Tenant)
+  }, [profile?.tenant_id])
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s)
@@ -71,6 +83,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe()
   }, [])
 
+  // ── Realtime: listen for tenant plan/status changes (e.g. Stripe webhook) ──
+  useEffect(() => {
+    if (!profile?.tenant_id) return
+
+    const channel = supabase
+      .channel(`tenant-${profile.tenant_id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'tenants',
+          filter: `id=eq.${profile.tenant_id}`,
+        },
+        (payload) => {
+          setTenant(payload.new as Tenant)
+        }
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [profile?.tenant_id])
+
+  // ── Refresh tenant on window focus (catches Stripe redirect) ───────────────
+  useEffect(() => {
+    const onFocus = () => { if (profile?.tenant_id) refreshTenant() }
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
+  }, [profile?.tenant_id, refreshTenant])
+
   async function signIn(email: string, password: string) {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     return { error: error?.message ?? null }
@@ -81,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, tenant, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ session, user, profile, tenant, loading, refreshTenant, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   )
