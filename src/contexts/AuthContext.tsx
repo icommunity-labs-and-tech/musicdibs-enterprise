@@ -10,6 +10,7 @@ interface AuthContextType {
   loading: boolean
   refreshTenant: () => Promise<void>
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
+  signUp: (email: string, password: string, orgName: string) => Promise<{ error: string | null; needsVerification: boolean }>
   signOut: () => Promise<void>
 }
 
@@ -113,6 +114,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('focus', onFocus)
   }, [profile?.tenant_id, refreshTenant])
 
+  async function signUp(email: string, password: string, orgName: string) {
+    const slug = orgName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
+      + '-' + Math.random().toString(36).slice(2, 7)
+
+    const { data, error } = await supabase.auth.signUp({ email, password })
+    if (error) return { error: error.message, needsVerification: false }
+
+    const user = data.user
+    if (!user) return { error: 'No user returned', needsVerification: false }
+
+    // If session returned immediately (email confirmation disabled), create tenant + profile
+    if (data.session) {
+      const { data: tenant, error: tErr } = await supabase
+        .from('tenants')
+        .insert({ name: orgName || email.split('@')[0], slug, plan: 'starter', setup_complete: false })
+        .select()
+        .single()
+
+      if (tErr) return { error: tErr.message, needsVerification: false }
+
+      const { error: pErr } = await supabase
+        .from('profiles')
+        .insert({ id: user.id, tenant_id: tenant.id, full_name: null, role: 'admin' })
+
+      if (pErr) return { error: pErr.message, needsVerification: false }
+    }
+
+    // If no session, email confirmation is required
+    return { error: null, needsVerification: !data.session }
+  }
+
   async function signIn(email: string, password: string) {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     return { error: error?.message ?? null }
@@ -123,7 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, tenant, loading, refreshTenant, signIn, signOut }}>
+    <AuthContext.Provider value={{ session, user, profile, tenant, loading, refreshTenant, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   )

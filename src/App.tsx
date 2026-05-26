@@ -12,6 +12,7 @@ import { Settings } from '@/pages/Settings'
 import { CampaignDetail } from '@/pages/CampaignDetail'
 import { Login } from '@/pages/Login'
 import { Landing } from '@/pages/Landing'
+import { Signup } from '@/pages/Signup'
 import { useThemeStore } from '@/store/themeStore'
 import { ToastContainer } from '@/components/ToastContainer'
 
@@ -20,6 +21,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
       <Route
         path="/*"
         element={

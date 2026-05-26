@@ -105,10 +105,10 @@ export function Landing() {
               Iniciar sesión
             </Link>
             <Link
-              to="/login"
+              to="/signup"
               className="text-sm font-medium px-4 py-2 rounded-xl bg-[#C9973A] hover:bg-[#B8862E] text-white transition-colors"
             >
-              Solicitar demo
+              Empezar gratis
             </Link>
           </div>
         </div>
@@ -131,11 +131,11 @@ export function Landing() {
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link
-            to="/login"
+            to="/signup"
             className="px-6 py-3 rounded-xl bg-[#C9973A] hover:bg-[#B8862E] text-white font-semibold text-sm transition-colors flex items-center gap-2"
           >
             <i className="ti ti-rocket text-base" />
-            Solicitar acceso demo
+            Empezar gratis
           </Link>
           <a
             href="#features"
@@ -319,7 +319,7 @@ export function Landing() {
                   ))}
                 </ul>
                 <Link
-                  to="/login"
+                  to="/signup"
                   className={`text-center text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors ${
                     highlighted
                       ? 'bg-[#C9973A] hover:bg-[#B8862E] text-white'
@@ -344,11 +344,11 @@ export function Landing() {
             Únete a las empresas que ya generan conexiones emocionales con sus clientes mediante audio IA personalizado.
           </p>
           <Link
-            to="/login"
+            to="/signup"
             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-[#C9973A] hover:bg-[#B8862E] text-white font-semibold transition-colors"
           >
             <i className="ti ti-rocket text-base" />
-            Solicitar demo gratuita
+            Empezar gratis — 14 días
           </Link>
         </div>
       </section>

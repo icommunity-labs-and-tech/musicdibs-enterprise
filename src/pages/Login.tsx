@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 
 export function Login() {
@@ -111,9 +111,17 @@ export function Login() {
           </button>
         </div>
 
-        <p className="text-center text-xs text-sand-900/30 dark:text-night-50/30 mt-6">
-          demo@musicdibs.com · MusicDibs2026!
-        </p>
+        <div className="mt-6 flex flex-col items-center gap-2">
+          <p className="text-center text-sm text-sand-900/50 dark:text-night-50/50">
+            ¿No tienes cuenta?{' '}
+            <Link to="/signup" className="font-medium text-[#C9973A] hover:underline">
+              Regístrate gratis
+            </Link>
+          </p>
+          <p className="text-center text-xs text-sand-900/30 dark:text-night-50/30">
+            demo@musicdibs.com · MusicDibs2026!
+          </p>
+        </div>
       </div>
     </div>
   )
