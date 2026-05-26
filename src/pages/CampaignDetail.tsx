@@ -70,6 +70,73 @@ function ConfigRow({ label, value }: { label: string; value: string | null | und
   )
 }
 
+
+// ── CSV export ────────────────────────────────────────────────────────────────
+function exportCampaignCSV(
+  campaign: Campaign,
+  stats: CampaignStats | null,
+  jobs: GenerationJob[]
+) {
+  const rows: string[][] = []
+
+  // Summary header
+  rows.push(['== RESUMEN DE CAMPAÑA =='])
+  rows.push(['Campo', 'Valor'])
+  rows.push(['Nombre', campaign.name])
+  rows.push(['Estado', campaign.status])
+  rows.push(['Vertical', campaign.vertical])
+  rows.push(['Tipo', campaign.type])
+  rows.push(['Tono', campaign.tone ?? '—'])
+  rows.push(['Idioma', campaign.language])
+  rows.push(['Canal', campaign.delivery_channel])
+  rows.push(['Proveedor IA', campaign.ai_provider])
+  rows.push(['Total contactos', campaign.total_contacts.toString()])
+  rows.push(['Coste estimado', campaign.cost_estimate ? `€${campaign.cost_estimate}` : '—'])
+  rows.push(['Creada', new Date(campaign.created_at).toLocaleString('es-ES')])
+  rows.push([])
+
+  // Performance
+  if (stats) {
+    rows.push(['== RENDIMIENTO =='])
+    rows.push(['Métrica', 'Valor'])
+    rows.push(['Emails enviados', stats.emails_sent.toString()])
+    rows.push(['Emails abiertos', stats.emails_opened.toString()])
+    rows.push(['Open rate', `${((stats.emails_opened / stats.emails_sent) * 100).toFixed(1)}%`])
+    rows.push(['Clicks', stats.emails_clicked.toString()])
+    rows.push(['Click rate', `${((stats.emails_clicked / stats.emails_sent) * 100).toFixed(1)}%`])
+    rows.push(['CTOR', stats.emails_opened > 0 ? `${((stats.emails_clicked / stats.emails_opened) * 100).toFixed(1)}%` : '—'])
+    rows.push(['Bajas', stats.unsubscribes.toString()])
+    rows.push(['Coste real', `€${stats.cost_actual.toFixed(2)}`])
+    rows.push([])
+  }
+
+  // Jobs
+  if (jobs.length > 0) {
+    rows.push(['== JOBS DE GENERACIÓN =='])
+    rows.push(['#', 'Estado', 'Creado', 'Error'])
+    jobs.forEach((j, i) => {
+      rows.push([
+        (i + 1).toString(),
+        j.status,
+        new Date(j.created_at).toLocaleString('es-ES'),
+        j.error_message ?? '',
+      ])
+    })
+  }
+
+  const csv = rows
+    .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    .join('\n')
+
+  const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `campaña_${campaign.name.toLowerCase().replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 // ── main ──────────────────────────────────────────────────────────────────────
 export function CampaignDetail() {
   const { id } = useParams<{ id: string }>()
@@ -158,21 +225,31 @@ export function CampaignDetail() {
             </div>
           </div>
 
-          {/* primary CTA */}
-          {isActive ? (
-            <Link
-              to={`/campaigns/${c.id}/queue`}
-              className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl bg-gold-400 hover:bg-gold-500 text-night-900 text-sm font-medium transition-colors"
+          {/* primary CTAs */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => exportCampaignCSV(c, stats, jobs)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-sand-200 dark:border-night-600 text-sand-900/60 dark:text-night-50/60 hover:text-sand-900 dark:hover:text-night-50 text-sm font-medium transition-colors"
+              title="Exportar CSV"
             >
-              <i className="ti ti-list-check text-base" />
-              Ver cola
-            </Link>
-          ) : c.status === 'ready' ? (
-            <button className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-500 hover:bg-teal-600 text-white text-sm font-medium transition-colors">
-              <i className="ti ti-send text-base" />
-              Enviar campaña
+              <i className="ti ti-download text-base" />
+              <span className="hidden sm:inline">Exportar</span>
             </button>
-          ) : null}
+            {isActive ? (
+              <Link
+                to={`/campaigns/${c.id}/queue`}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gold-400 hover:bg-gold-500 text-night-900 text-sm font-medium transition-colors"
+              >
+                <i className="ti ti-list-check text-base" />
+                Ver cola
+              </Link>
+            ) : c.status === 'ready' ? (
+              <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-500 hover:bg-teal-600 text-white text-sm font-medium transition-colors">
+                <i className="ti ti-send text-base" />
+                Enviar
+              </button>
+            ) : null}
+          </div>
         </div>
       </div>
 
