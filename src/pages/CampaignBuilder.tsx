@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useCampaignStore } from '@/store/campaignStore'
-import { formatCurrency } from '@/lib/utils'
-import { cn } from '@/lib/utils'
+import { useCampaignStore, type CampaignDraft } from '@/store/campaignStore'
+import { formatCurrency, cn } from '@/lib/utils'
+
+type DraftUpdater = (patch: Partial<CampaignDraft>) => void
 
 const STEPS = [
   { id: 0, label: 'Campaña', icon: 'ti-speakerphone' },
@@ -119,7 +120,7 @@ export function CampaignBuilder() {
 
 /* ─── Step components ─────────────────────────────────────────────────────── */
 
-function StepCampaign({ draft, update }: { draft: ReturnType<typeof useCampaignStore>['draft']; update: (p: Partial<typeof draft>) => void }) {
+function StepCampaign({ draft, update }: { draft: CampaignDraft; update: DraftUpdater }) {
   return (
     <div className="space-y-4">
       <h2 className="font-display text-lg font-semibold text-sand-900 dark:text-night-50">
@@ -233,7 +234,7 @@ function StepAudiencia({ contacts }: { contacts: typeof SAMPLE_CONTACTS }) {
   )
 }
 
-function StepPlantilla({ draft, update }: { draft: ReturnType<typeof useCampaignStore>['draft']; update: (p: Partial<typeof draft>) => void }) {
+function StepPlantilla({ draft, update }: { draft: CampaignDraft; update: DraftUpdater }) {
   const vars = ['{nombre}', '{años_como_cliente}', '{tipo_póliza}', '{ciudad}']
   return (
     <div className="space-y-4">
@@ -293,7 +294,7 @@ function StepPlantilla({ draft, update }: { draft: ReturnType<typeof useCampaign
   )
 }
 
-function StepAssets({ draft, update }: { draft: ReturnType<typeof useCampaignStore>['draft']; update: (p: Partial<typeof draft>) => void }) {
+function StepAssets({ draft, update }: { draft: CampaignDraft; update: DraftUpdater }) {
   return (
     <div className="space-y-4">
       <h2 className="font-display text-lg font-semibold text-sand-900 dark:text-night-50">
@@ -342,7 +343,7 @@ function StepAssets({ draft, update }: { draft: ReturnType<typeof useCampaignSto
   )
 }
 
-function StepEntrega({ draft, update }: { draft: ReturnType<typeof useCampaignStore>['draft']; update: (p: Partial<typeof draft>) => void }) {
+function StepEntrega({ draft, update }: { draft: CampaignDraft; update: DraftUpdater }) {
   return (
     <div className="space-y-4">
       <h2 className="font-display text-lg font-semibold text-sand-900 dark:text-night-50">
@@ -444,7 +445,7 @@ function StepLanzar({ cost, launching, onLaunch }: { cost: number; launching: bo
 
 /* ─── Preview card ────────────────────────────────────────────────────────── */
 
-function PreviewCard({ step, cost, draft }: { step: number; cost: number; draft: ReturnType<typeof useCampaignStore>['draft'] }) {
+function PreviewCard({ step, cost, draft }: { step: number; cost: number; draft: CampaignDraft }) {
   return (
     <div className="card p-5 space-y-4 h-fit sticky top-6">
       <p className="text-xs font-sans font-medium text-sand-900/40 dark:text-night-50/40 uppercase tracking-widest">Vista previa</p>
@@ -534,15 +535,4 @@ function LaunchSuccess({ onQueue, onNew }: { onQueue: () => void; onNew: () => v
       <p className="text-sand-900/60 dark:text-night-50/60 text-sm mb-8">
         1,247 assets comenzando a generarse · ~2h estimadas
       </p>
-      <div className="flex flex-col gap-3">
-        <button onClick={onQueue} className="btn-primary justify-center w-full py-3">
-          <i className="ti ti-list-check" />
-          Ver cola de generación
-        </button>
-        <button onClick={onNew} className="btn-ghost justify-center w-full">
-          Crear otra campaña
-        </button>
-      </div>
-    </div>
-  )
-}
+      <div className="flex flex-col 
