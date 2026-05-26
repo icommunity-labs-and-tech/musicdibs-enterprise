@@ -1,3 +1,4 @@
+import { NotificationCenter } from '@/components/NotificationCenter'
 import { useThemeStore } from '@/store/themeStore'
 import { useAuth } from '@/contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
