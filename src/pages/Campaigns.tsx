@@ -17,13 +17,13 @@ export function Campaigns() {
             {campaigns.length} campañas en total
           </p>
         </div>
-        <button onClick={() => navigate('/campaigns/new')} className="btn-primary">
+        <button onClick={() => navigate('/campaigns/new')} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#C9973A] text-white font-semibold text-sm hover:bg-[#b8832e] active:scale-95 transition-all duration-150">
           <i className="ti ti-plus text-sm" />
           Nueva campaña
         </button>
       </div>
 
-      <div className="card overflow-hidden">
+      <div className="bg-white dark:bg-[#1A1510] rounded-xl border border-black/8 dark:border-white/8 shadow-sm overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-black/8 dark:border-white/8">
@@ -46,7 +46,7 @@ export function Campaigns() {
                   <p className="text-xs text-sand-900/40 dark:text-night-50/40 mt-0.5">{c.type}</p>
                 </td>
                 <td className="px-5 py-4">
-                  <span className="badge badge-gold capitalize">{c.vertical}</span>
+                  <span className="badge inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-[#C9973A]/15 text-[#8C5E0A] dark:text-[#C9973A] capitalize">{c.vertical}</span>
                 </td>
                 <td className="px-5 py-4 text-sand-900/70 dark:text-night-50/70">
                   {formatNumber(c.totalContacts)}

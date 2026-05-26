@@ -24,7 +24,7 @@ export function Topbar() {
         {/* New campaign CTA */}
         <button
           onClick={() => navigate('/campaigns/new')}
-          className="btn-primary"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#C9973A] text-white font-semibold text-sm hover:bg-[#b8832e] active:scale-95 transition-all duration-150"
         >
           <i className="ti ti-plus text-sm" />
           Nueva campaña

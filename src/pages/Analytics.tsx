@@ -28,7 +28,7 @@ export function Analytics() {
       {/* KPIs */}
       <div className="grid grid-cols-4 gap-4">
         {metrics.map(({ label, value, benchmark, icon, color }) => (
-          <div key={label} className="card p-5">
+          <div key={label} className="bg-white dark:bg-[#1A1510] rounded-xl border border-black/8 dark:border-white/8 shadow-sm p-5">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-sans text-sand-900/50 dark:text-night-50/50 uppercase tracking-wide">{label}</p>
               <i className={`ti ${icon} text-base ${color === 'gold' ? 'text-[#C9973A]' : 'text-[#2BB5A0]'}`} />
@@ -47,7 +47,7 @@ export function Analytics() {
       </div>
 
       {/* Chart */}
-      <div className="card p-5">
+      <div className="bg-white dark:bg-[#1A1510] rounded-xl border border-black/8 dark:border-white/8 shadow-sm p-5">
         <h2 className="font-display text-base font-semibold text-sand-900 dark:text-night-50 mb-5">
           Evolución mensual
         </h2>
@@ -87,7 +87,7 @@ export function Analytics() {
           { label: 'ROI de campaña', value: '5,424%', icon: 'ti-trending-up', desc: '€236.93 invertidos' },
           { label: 'Coste por conversión', value: '€4.21', icon: 'ti-target', desc: 'vs. €18.40 canal tradicional' },
         ].map(({ label, value, icon, desc }) => (
-          <div key={label} className="card p-5">
+          <div key={label} className="bg-white dark:bg-[#1A1510] rounded-xl border border-black/8 dark:border-white/8 shadow-sm p-5">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-9 h-9 rounded-lg bg-[#2BB5A0]/12 flex items-center justify-center">
                 <i className={`ti ${icon} text-[#0D7A64] dark:text-[#2BB5A0] text-base`} />

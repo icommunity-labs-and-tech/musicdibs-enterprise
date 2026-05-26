@@ -86,7 +86,7 @@ export function CampaignBuilder() {
       {/* Body */}
       <div className="grid grid-cols-[1fr_320px] gap-5">
         {/* Left panel */}
-        <div className="card p-6 space-y-5">
+        <div className="bg-white dark:bg-[#1A1510] rounded-xl border border-black/8 dark:border-white/8 shadow-sm p-6 space-y-5">
           {step === 0 && <StepCampaign draft={draft} update={updateDraft} />}
           {step === 1 && <StepAudiencia contacts={SAMPLE_CONTACTS} />}
           {step === 2 && <StepPlantilla draft={draft} update={updateDraft} />}
@@ -99,12 +99,12 @@ export function CampaignBuilder() {
             <button
               onClick={prevStep}
               disabled={step === 0}
-              className="btn-ghost disabled:opacity-30"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-sand-900/70 dark:text-white/70 hover:bg-black/5 dark:hover:bg-white/5 transition-all disabled:opacity-30"
             >
               <i className="ti ti-arrow-left text-sm" /> Anterior
             </button>
             {step < 5 ? (
-              <button onClick={nextStep} className="btn-primary">
+              <button onClick={nextStep} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#C9973A] text-white font-semibold text-sm hover:bg-[#b8832e] active:scale-95 transition-all duration-150">
                 Siguiente <i className="ti ti-arrow-right text-sm" />
               </button>
             ) : null}
@@ -131,7 +131,7 @@ function StepCampaign({ draft, update }: { draft: CampaignDraft; update: DraftUp
           Nombre de campaña
         </label>
         <input
-          className="input"
+          className="w-full px-3 py-2 rounded-lg text-sm bg-[#F5EFE6] dark:bg-[#0C0A08] border border-black/10 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-[#C9973A]/30 transition-all"
           value={draft.name}
           onChange={(e) => update({ name: e.target.value })}
           placeholder="Ej: Feliz Cumpleaños Premium — Asegurados 2026"
@@ -142,7 +142,7 @@ function StepCampaign({ draft, update }: { draft: CampaignDraft; update: DraftUp
           <label className="block text-xs font-sans font-medium text-sand-900/60 dark:text-night-50/60 mb-1.5">
             Tipo
           </label>
-          <select className="input" value={draft.type} onChange={(e) => update({ type: e.target.value as typeof draft.type })}>
+          <select className="w-full px-3 py-2 rounded-lg text-sm bg-[#F5EFE6] dark:bg-[#0C0A08] border border-black/10 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-[#C9973A]/30 transition-all" value={draft.type} onChange={(e) => update({ type: e.target.value as typeof draft.type })}>
             <option value="">Seleccionar…</option>
             <option value="birthday">Cumpleaños</option>
             <option value="anniversary">Aniversario</option>
@@ -155,7 +155,7 @@ function StepCampaign({ draft, update }: { draft: CampaignDraft; update: DraftUp
           <label className="block text-xs font-sans font-medium text-sand-900/60 dark:text-night-50/60 mb-1.5">
             Vertical
           </label>
-          <select className="input" value={draft.vertical} onChange={(e) => update({ vertical: e.target.value as typeof draft.vertical })}>
+          <select className="w-full px-3 py-2 rounded-lg text-sm bg-[#F5EFE6] dark:bg-[#0C0A08] border border-black/10 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-[#C9973A]/30 transition-all" value={draft.vertical} onChange={(e) => update({ vertical: e.target.value as typeof draft.vertical })}>
             <option value="">Seleccionar…</option>
             <option value="insurance">Seguros</option>
             <option value="telecom">Telecomunicaciones</option>
@@ -169,7 +169,7 @@ function StepCampaign({ draft, update }: { draft: CampaignDraft; update: DraftUp
         <label className="block text-xs font-sans font-medium text-sand-900/60 dark:text-night-50/60 mb-1.5">
           Objetivo
         </label>
-        <select className="input" value={draft.goal} onChange={(e) => update({ goal: e.target.value })}>
+        <select className="w-full px-3 py-2 rounded-lg text-sm bg-[#F5EFE6] dark:bg-[#0C0A08] border border-black/10 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-[#C9973A]/30 transition-all" value={draft.goal} onChange={(e) => update({ goal: e.target.value })}>
           <option value="">Seleccionar…</option>
           <option value="engagement">Engagement emocional</option>
           <option value="retention">Retención</option>
@@ -246,7 +246,7 @@ function StepPlantilla({ draft, update }: { draft: CampaignDraft; update: DraftU
           Prompt
         </label>
         <textarea
-          className="input min-h-[120px] resize-none font-mono text-xs"
+          className="w-full px-3 py-2 rounded-lg text-sm bg-[#F5EFE6] dark:bg-[#0C0A08] border border-black/10 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-[#C9973A]/30 transition-all min-h-[120px] resize-none font-mono text-xs"
           value={draft.aiPrompt}
           onChange={(e) => update({ aiPrompt: e.target.value })}
           placeholder="Crea una canción de cumpleaños emotiva para {nombre}, cliente de {años_como_cliente} años con póliza {tipo_póliza}…"
@@ -266,7 +266,7 @@ function StepPlantilla({ draft, update }: { draft: CampaignDraft; update: DraftU
       <div className="grid grid-cols-3 gap-4">
         <div>
           <label className="block text-xs font-sans font-medium text-sand-900/60 dark:text-night-50/60 mb-1.5">Tono</label>
-          <select className="input" value={draft.tone} onChange={(e) => update({ tone: e.target.value })}>
+          <select className="w-full px-3 py-2 rounded-lg text-sm bg-[#F5EFE6] dark:bg-[#0C0A08] border border-black/10 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-[#C9973A]/30 transition-all" value={draft.tone} onChange={(e) => update({ tone: e.target.value })}>
             <option value="warm">Cálido</option>
             <option value="professional">Profesional</option>
             <option value="fun">Divertido</option>
@@ -275,7 +275,7 @@ function StepPlantilla({ draft, update }: { draft: CampaignDraft; update: DraftU
         </div>
         <div>
           <label className="block text-xs font-sans font-medium text-sand-900/60 dark:text-night-50/60 mb-1.5">Idioma</label>
-          <select className="input" value={draft.language} onChange={(e) => update({ language: e.target.value })}>
+          <select className="w-full px-3 py-2 rounded-lg text-sm bg-[#F5EFE6] dark:bg-[#0C0A08] border border-black/10 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-[#C9973A]/30 transition-all" value={draft.language} onChange={(e) => update({ language: e.target.value })}>
             <option value="es">Español</option>
             <option value="en">English</option>
             <option value="fr">Français</option>
@@ -284,7 +284,7 @@ function StepPlantilla({ draft, update }: { draft: CampaignDraft; update: DraftU
         </div>
         <div>
           <label className="block text-xs font-sans font-medium text-sand-900/60 dark:text-night-50/60 mb-1.5">Proveedor</label>
-          <select className="input" value={draft.aiProvider} onChange={(e) => update({ aiProvider: e.target.value as typeof draft.aiProvider })}>
+          <select className="w-full px-3 py-2 rounded-lg text-sm bg-[#F5EFE6] dark:bg-[#0C0A08] border border-black/10 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-[#C9973A]/30 transition-all" value={draft.aiProvider} onChange={(e) => update({ aiProvider: e.target.value as typeof draft.aiProvider })}>
             <option value="kie.ai">KIE.ai</option>
             <option value="suno">Suno API</option>
           </select>
@@ -312,7 +312,7 @@ function StepAssets({ draft, update }: { draft: CampaignDraft; update: DraftUpda
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-xs font-sans font-medium text-sand-900/60 dark:text-night-50/60 mb-1.5">Estilo musical</label>
-          <select className="input" value={draft.musicStyle} onChange={(e) => update({ musicStyle: e.target.value })}>
+          <select className="w-full px-3 py-2 rounded-lg text-sm bg-[#F5EFE6] dark:bg-[#0C0A08] border border-black/10 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-[#C9973A]/30 transition-all" value={draft.musicStyle} onChange={(e) => update({ musicStyle: e.target.value })}>
             <option value="orchestral">Orquestal</option>
             <option value="pop">Pop</option>
             <option value="jazz">Jazz</option>
@@ -321,7 +321,7 @@ function StepAssets({ draft, update }: { draft: CampaignDraft; update: DraftUpda
         </div>
         <div>
           <label className="block text-xs font-sans font-medium text-sand-900/60 dark:text-night-50/60 mb-1.5">Duración</label>
-          <select className="input" value={draft.duration} onChange={(e) => update({ duration: Number(e.target.value) })}>
+          <select className="w-full px-3 py-2 rounded-lg text-sm bg-[#F5EFE6] dark:bg-[#0C0A08] border border-black/10 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-[#C9973A]/30 transition-all" value={draft.duration} onChange={(e) => update({ duration: Number(e.target.value) })}>
             <option value={30}>30 seg</option>
             <option value={60}>60 seg</option>
             <option value={90}>90 seg</option>
@@ -376,12 +376,12 @@ function StepEntrega({ draft, update }: { draft: CampaignDraft; update: DraftUpd
       </div>
       <div>
         <label className="block text-xs font-sans font-medium text-sand-900/60 dark:text-night-50/60 mb-1.5">Asunto del email</label>
-        <input className="input" value={draft.subject} onChange={(e) => update({ subject: e.target.value })} placeholder="🎂 ¡Feliz Cumpleaños, {nombre}!" />
+        <input className="w-full px-3 py-2 rounded-lg text-sm bg-[#F5EFE6] dark:bg-[#0C0A08] border border-black/10 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-[#C9973A]/30 transition-all" value={draft.subject} onChange={(e) => update({ subject: e.target.value })} placeholder="🎂 ¡Feliz Cumpleaños, {nombre}!" />
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-xs font-sans font-medium text-sand-900/60 dark:text-night-50/60 mb-1.5">Disparador</label>
-          <select className="input" value={draft.triggerType} onChange={(e) => update({ triggerType: e.target.value })}>
+          <select className="w-full px-3 py-2 rounded-lg text-sm bg-[#F5EFE6] dark:bg-[#0C0A08] border border-black/10 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-[#C9973A]/30 transition-all" value={draft.triggerType} onChange={(e) => update({ triggerType: e.target.value })}>
             <option value="birthday">Día del cumpleaños</option>
             <option value="day_before">Día antes</option>
             <option value="week_before">Semana antes</option>
@@ -389,7 +389,7 @@ function StepEntrega({ draft, update }: { draft: CampaignDraft; update: DraftUpd
         </div>
         <div>
           <label className="block text-xs font-sans font-medium text-sand-900/60 dark:text-night-50/60 mb-1.5">Hora de envío</label>
-          <input type="time" className="input" value={draft.triggerTime} onChange={(e) => update({ triggerTime: e.target.value })} />
+          <input type="time" className="w-full px-3 py-2 rounded-lg text-sm bg-[#F5EFE6] dark:bg-[#0C0A08] border border-black/10 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-[#C9973A]/30 transition-all" value={draft.triggerTime} onChange={(e) => update({ triggerTime: e.target.value })} />
         </div>
       </div>
     </div>
@@ -443,11 +443,11 @@ function StepLanzar({ cost, launching, onLaunch }: { cost: number; launching: bo
   )
 }
 
-/* ─── Preview card ────────────────────────────────────────────────────────── */
+/* ─── Preview bg-white dark:bg-[#1A1510] rounded-xl border border-black/8 dark:border-white/8 shadow-sm ────────────────────────────────────────────────────────── */
 
 function PreviewCard({ step, cost, draft }: { step: number; cost: number; draft: CampaignDraft }) {
   return (
-    <div className="card p-5 space-y-4 h-fit sticky top-6">
+    <div className="bg-white dark:bg-[#1A1510] rounded-xl border border-black/8 dark:border-white/8 shadow-sm p-5 space-y-4 h-fit sticky top-6">
       <p className="text-xs font-sans font-medium text-sand-900/40 dark:text-night-50/40 uppercase tracking-widest">Vista previa</p>
 
       {/* Campaign name */}
@@ -456,8 +456,8 @@ function PreviewCard({ step, cost, draft }: { step: number; cost: number; draft:
           {draft.name || 'Sin nombre'}
         </p>
         <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-          {draft.type && <span className="badge badge-gold capitalize">{draft.type}</span>}
-          {draft.vertical && <span className="badge badge-teal capitalize">{draft.vertical}</span>}
+          {draft.type && <span className="badge inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-[#C9973A]/15 text-[#8C5E0A] dark:text-[#C9973A] capitalize">{draft.type}</span>}
+          {draft.vertical && <span className="badge inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-[#2BB5A0]/15 text-[#0D7A64] dark:text-[#2BB5A0] capitalize">{draft.vertical}</span>}
         </div>
       </div>
 
@@ -498,7 +498,7 @@ function PreviewCard({ step, cost, draft }: { step: number; cost: number; draft:
           </div>
           <div className="flex items-center justify-between text-xs mt-1">
             <span className="text-sand-900/40 dark:text-night-50/40">€0.19 × 1,247</span>
-            <span className="badge-gold">€0.19/cliente</span>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-[#C9973A]/15 text-[#8C5E0A] dark:text-[#C9973A]">€0.19/cliente</span>
           </div>
         </div>
       )}

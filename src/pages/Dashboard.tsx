@@ -27,7 +27,7 @@ export function Dashboard() {
       {/* KPIs */}
       <div className="grid grid-cols-4 gap-4">
         {kpis.map(({ label, value, icon, color }) => (
-          <div key={label} className="card p-5">
+          <div key={label} className="bg-white dark:bg-[#1A1510] rounded-xl border border-black/8 dark:border-white/8 shadow-sm p-5">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs font-sans text-sand-900/50 dark:text-night-50/50 uppercase tracking-wide">
@@ -50,7 +50,7 @@ export function Dashboard() {
       </div>
 
       {/* Campaigns list */}
-      <div className="card">
+      <div className="bg-white dark:bg-[#1A1510] rounded-xl border border-black/8 dark:border-white/8 shadow-sm">
         <div className="px-5 py-4 border-b border-black/8 dark:border-white/8 flex items-center justify-between">
           <h2 className="font-display text-base font-semibold text-sand-900 dark:text-night-50">
             Campañas recientes

@@ -70,7 +70,7 @@ export function GenerationQueue() {
       </div>
 
       {/* Progress bar */}
-      <div className="card p-5">
+      <div className="bg-white dark:bg-[#1A1510] rounded-xl border border-black/8 dark:border-white/8 shadow-sm p-5">
         <div className="flex items-center justify-between mb-3">
           <div>
             <span className="font-display text-3xl font-semibold text-sand-900 dark:text-night-50">{done}</span>
@@ -112,7 +112,7 @@ export function GenerationQueue() {
       </div>
 
       {/* Jobs list */}
-      <div className="card overflow-hidden">
+      <div className="bg-white dark:bg-[#1A1510] rounded-xl border border-black/8 dark:border-white/8 shadow-sm overflow-hidden">
         <div className="px-5 py-3 border-b border-black/8 dark:border-white/8">
           <p className="text-sm font-sans font-medium text-sand-900/50 dark:text-night-50/50">
             Mostrando 20 de {total.toLocaleString('es-ES')} trabajos

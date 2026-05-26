@@ -4,7 +4,7 @@ export function Settings() {
       <h1 className="font-display text-2xl text-sand-900 dark:text-night-50 font-semibold">
         Configuración
       </h1>
-      <div className="card p-5 space-y-4">
+      <div className="bg-white dark:bg-[#1A1510] rounded-xl border border-black/8 dark:border-white/8 shadow-sm p-5 space-y-4">
         <h2 className="font-display text-base font-semibold text-sand-900 dark:text-night-50">Integraciones</h2>
         {[
           { name: 'Salesforce CRM', status: 'Conectado', icon: 'ti-database', connected: true },
