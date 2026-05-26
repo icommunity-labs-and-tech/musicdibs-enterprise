@@ -14,6 +14,10 @@ export interface Tenant {
   vertical: string | null
   plan: TenantPlan
   logo_url: string | null
+  stripe_customer_id: string | null
+  stripe_subscription_id: string | null
+  stripe_price_id: string | null
+  stripe_status: 'inactive' | 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid' | null
   created_at: string
   updated_at: string
 }
