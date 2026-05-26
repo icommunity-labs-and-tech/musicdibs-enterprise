@@ -18,6 +18,7 @@ export interface Tenant {
   stripe_subscription_id: string | null
   stripe_price_id: string | null
   stripe_status: 'inactive' | 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid' | null
+  setup_complete: boolean
   created_at: string
   updated_at: string
 }

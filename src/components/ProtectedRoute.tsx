@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
+import { Onboarding } from '@/components/Onboarding'
 
 function Spinner() {
   return (
@@ -15,8 +16,10 @@ function Spinner() {
 }
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { session, loading } = useAuth()
+  const { session, loading, tenant } = useAuth()
   if (loading) return <Spinner />
   if (!session) return <Navigate to="/login" replace />
+  // New tenants that haven't completed setup see the onboarding wizard
+  if (tenant && tenant.setup_complete === false) return <Onboarding />
   return <>{children}</>
 }
