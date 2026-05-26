@@ -1,5 +1,6 @@
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { formatDistanceToNow, format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { supabase } from '@/lib/supabase'
@@ -143,6 +144,31 @@ export function CampaignDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const toast = useToast()
+  const qc = useQueryClient()
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [sending, setSending] = useState(false)
+
+  async function sendCampaign() {
+    if (!c) return
+    setSending(true)
+    setShowConfirm(false)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await supabase.functions.invoke('send-campaign', {
+        body: { campaign_id: c.id },
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      })
+      if (res.error) throw new Error(res.error.message)
+      const body = res.data as { error?: string; success?: boolean }
+      if (body?.error) throw new Error(body.error)
+      toast.success('Campaña enviada', `"${c.name}" se ha enviado correctamente.`)
+      qc.invalidateQueries({ queryKey: ['campaign', c.id] })
+    } catch (err) {
+      toast.error('Error al enviar', err instanceof Error ? err.message : 'Inténtalo de nuevo.')
+    } finally {
+      setSending(false)
+    }
+  }
   const { tenant } = useAuth()
 
   const { data, isLoading, error } = useQuery({
@@ -249,9 +275,15 @@ export function CampaignDetail() {
                 Ver cola
               </Link>
             ) : c.status === 'ready' ? (
-              <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-500 hover:bg-teal-600 text-white text-sm font-medium transition-colors">
-                <i className="ti ti-send text-base" />
-                Enviar
+              <button
+                onClick={() => setShowConfirm(true)}
+                disabled={sending}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-500 hover:bg-teal-600 disabled:opacity-60 text-white text-sm font-medium transition-colors"
+              >
+                {sending
+                  ? <><i className="ti ti-loader-2 animate-spin text-base" /> Enviando…</>
+                  : <><i className="ti ti-send text-base" /> Enviar campaña</>
+                }
               </button>
             ) : null}
           </div>
@@ -375,6 +407,42 @@ export function CampaignDetail() {
         </div>
       </div>
 
+    </div>
+
+      {/* ── Send confirmation modal ────────────────────────────────────────── */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white dark:bg-[#1A1510] rounded-2xl border border-black/8 dark:border-white/8 shadow-xl p-6 w-full max-w-sm">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-teal-500/10 flex items-center justify-center flex-shrink-0">
+                <i className="ti ti-send text-teal-500 text-xl" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-sand-900 dark:text-night-50">
+                  Confirmar envío
+                </h3>
+                <p className="text-sm text-sand-900/60 dark:text-night-50/60 mt-0.5">
+                  Vas a enviar <strong>"{c?.name}"</strong> a {formatNumber(c?.total_contacts ?? 0)} contactos vía Mailerlite. Esta acción no se puede deshacer.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setShowConfirm(false)}
+                className="px-4 py-2 rounded-xl text-sm font-medium border border-black/10 dark:border-white/10 hover:bg-black/4 dark:hover:bg-white/4 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={sendCampaign}
+                className="px-4 py-2 rounded-xl text-sm font-medium bg-teal-500 hover:bg-teal-600 text-white transition-colors"
+              >
+                Sí, enviar ahora
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
