@@ -11,11 +11,13 @@ import { Analytics } from '@/pages/Analytics'
 import { Settings } from '@/pages/Settings'
 import { CampaignDetail } from '@/pages/CampaignDetail'
 import { Login } from '@/pages/Login'
+import { Landing } from '@/pages/Landing'
 import { useThemeStore } from '@/store/themeStore'
 
 function AppRoutes() {
   return (
     <Routes>
+      <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route
         path="/*"
