@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --gold: #C9973A;
+    --teal: #2BB5A0;
+    --red: #E06050;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-sand-100 text-sand-900 font-sans antialiased;
+  }
+
+  .dark body {
+    @apply bg-night-900 text-night-50;
+  }
+
+  h1, h2, h3 {
+    @apply font-display;
+  }
+
+  code, pre {
+    @apply font-mono;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg
+      bg-[#C9973A] text-white font-sans font-semibold text-sm
+      hover:bg-[#b8832e] active:scale-95
+      transition-all duration-150;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg
+      text-sand-900/70 dark:text-night-50/70 font-sans font-medium text-sm
+      hover:bg-black/5 dark:hover:bg-white/5
+      transition-all duration-150;
+  }
+
+  .card {
+    @apply bg-white dark:bg-night-800 rounded-xl border border-black/8 dark:border-white/8
+      shadow-sm;
+  }
+
+  .input {
+    @apply w-full px-3 py-2 rounded-lg text-sm font-sans
+      bg-sand-50 dark:bg-night-900
+      border border-black/10 dark:border-white/10
+      placeholder:text-sand-900/30 dark:placeholder:text-night-50/30
+      focus:outline-none focus:ring-2 focus:ring-[#C9973A]/30
+      transition-all duration-150;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-sans font-medium;
+  }
+
+  .badge-gold {
+    @apply badge bg-[#C9973A]/15 text-[#8C5E0A] dark:text-[#C9973A];
+  }
+
+  .badge-teal {
+    @apply badge bg-[#2BB5A0]/15 text-[#0D7A64] dark:text-[#2BB5A0];
+  }
+
+  .badge-red {
+    @apply badge bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400;
+  }
+}
+
+/* Waveform animation */
+@keyframes wv {
+  0%, 100% { height: 4px; }
+  50% { height: var(--mh, 20px); }
+}
+
+.wave-bar {
+  animation: wv 1.2s ease-in-out infinite;
+  animation-delay: var(--delay, 0ms);
+}
+
+/* Smooth scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.15);
+  border-radius: 3px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.15);
+}
