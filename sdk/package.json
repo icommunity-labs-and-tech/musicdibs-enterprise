@@ -1,0 +1,25 @@
+{
+  "name": "@musicdibs/enterprise-sdk",
+  "version": "0.1.0",
+  "description": "MusicDibs Enterprise — SDK for integrating AI audio email campaigns",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean"
+  },
+  "keywords": ["musicdibs", "audio", "email", "campaigns", "ai", "enterprise"],
+  "license": "MIT",
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
+}

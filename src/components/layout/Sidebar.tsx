@@ -7,6 +7,7 @@ const nav = [
   { to: '/campaigns', icon: 'ti-speakerphone', label: 'Campañas' },
   { to: '/analytics', icon: 'ti-chart-bar', label: 'Analytics' },
   { to: '/settings', icon: 'ti-settings', label: 'Configuración' },
+  { to: '/developers', icon: 'ti-code', label: 'Developers' },
 ]
 
 export function Sidebar() {
