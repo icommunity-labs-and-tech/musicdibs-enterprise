@@ -407,7 +407,6 @@ export function CampaignDetail() {
         </div>
       </div>
 
-    </div>
 
       {/* ── Send confirmation modal ────────────────────────────────────────── */}
       {showConfirm && (
