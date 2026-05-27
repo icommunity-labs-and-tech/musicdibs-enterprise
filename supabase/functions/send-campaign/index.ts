@@ -125,6 +125,21 @@ Deno.serve(async (req: Request) => {
       link: `/campaigns/${campaign_id}`,
     })
 
+    // ── Dispatch webhook event ─────────────────────────────────────────────────
+    supabase.functions.invoke("webhook-dispatcher", {
+      body: {
+        tenant_id: tenantId,
+        event: "campaign.sent",
+        payload: {
+          campaign_id,
+          campaign_name: campaign.name,
+          mailerlite_campaign_id: mlCampaignId,
+          total_contacts: campaign.total_contacts,
+          sent_at: new Date().toISOString(),
+        },
+      },
+    }).then(() => {}) // fire and forget
+
     return json({ success: true, mailerlite_campaign_id: mlCampaignId })
 
   } catch (err) {
