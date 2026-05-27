@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 const nav = [
   { to: '/dashboard', icon: 'ti-layout-dashboard', label: 'Dashboard' },
   { to: '/campaigns', icon: 'ti-speakerphone', label: 'Campañas' },
+  { to: '/contacts',  icon: 'ti-users',          label: 'Contactos' },
   { to: '/analytics', icon: 'ti-chart-bar', label: 'Analytics' },
   { to: '/settings', icon: 'ti-settings', label: 'Configuración' },
   { to: '/developers', icon: 'ti-code', label: 'Developers' },
