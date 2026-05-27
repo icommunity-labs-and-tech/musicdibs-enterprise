@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
 
 const nav = [
@@ -9,6 +10,7 @@ const nav = [
 ]
 
 export function Sidebar() {
+  const { tenant, profile } = useAuth()
   return (
     <aside className="w-60 flex-shrink-0 flex flex-col bg-white dark:bg-night-800 border-r border-black/8 dark:border-white/8">
       {/* Logo */}
@@ -47,6 +49,24 @@ export function Sidebar() {
             {label}
           </NavLink>
         ))}
+
+        {/* Admin link — superadmin only */}
+        {profile?.is_superadmin && (
+          <NavLink
+            to="/admin"
+            className={({ isActive }) =>
+              cn(
+                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-sans font-medium transition-all duration-150 mt-1',
+                isActive
+                  ? 'bg-red-500/10 text-red-600 dark:text-red-400'
+                  : 'text-red-500/70 hover:bg-red-500/8 hover:text-red-600 dark:text-red-400/70 dark:hover:text-red-400'
+              )
+            }
+          >
+            <i className="ti ti-shield-lock text-base" />
+            Admin
+          </NavLink>
+        )}
       </nav>
 
       {/* Org badge */}

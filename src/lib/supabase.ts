@@ -29,6 +29,7 @@ export interface Profile {
   full_name: string | null
   role: 'admin' | 'manager' | 'analyst'
   avatar_url: string | null
+  is_superadmin: boolean
   created_at: string
 }
 

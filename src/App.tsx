@@ -13,6 +13,7 @@ import { CampaignDetail } from '@/pages/CampaignDetail'
 import { Login } from '@/pages/Login'
 import { Landing } from '@/pages/Landing'
 import { Signup } from '@/pages/Signup'
+import { Admin } from '@/pages/Admin'
 import { useThemeStore } from '@/store/themeStore'
 import { ToastContainer } from '@/components/ToastContainer'
 
@@ -36,6 +37,7 @@ function AppRoutes() {
                 <Route path="/campaigns/:id/queue" element={<GenerationQueue />} />
                 <Route path="/analytics" element={<Analytics />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/admin" element={<Admin />} />
               </Routes>
             </AppShell>
           </ProtectedRoute>
