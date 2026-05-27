@@ -535,6 +535,12 @@ function BillingSection({ tenant }: { tenant: NonNullable<ReturnType<typeof useA
                   {isCurrent ? 'Plan actual' : isDowngrade ? 'Cambiar' : 'Contratar'}
                 </button>
               </div>
+              {/* DEBUG: shows which price_id + period will be charged */}
+              {!isCurrent && (
+                <p className="mt-1 text-right text-[9px] font-mono text-sand-900/20 dark:text-night-50/20 select-none">
+                  {billing}/{plan.key} → {priceId.slice(-8)}
+                </p>
+              )}
               <ul className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1">
                 {plan.features.map(f => (
                   <li key={f} className="flex items-center gap-1.5 text-xs text-sand-900/60 dark:text-night-50/60">
