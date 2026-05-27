@@ -9,6 +9,7 @@ interface AuthContextType {
   tenant: Tenant | null
   loading: boolean
   refreshTenant: () => Promise<void>
+  patchTenant: (patch: Partial<Tenant>) => void
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
   signUp: (email: string, password: string, orgName: string) => Promise<{ error: string | null; needsVerification: boolean }>
   signOut: () => Promise<void>
@@ -154,8 +155,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut()
   }
 
+  // ── Optimistic local update (used by Onboarding to avoid race condition) ───
+  const patchTenant = useCallback((patch: Partial<Tenant>) => {
+    setTenant(prev => prev ? { ...prev, ...patch } : prev)
+  }, [])
+
   return (
-    <AuthContext.Provider value={{ session, user, profile, tenant, loading, refreshTenant, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ session, user, profile, tenant, loading, refreshTenant, patchTenant, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   )

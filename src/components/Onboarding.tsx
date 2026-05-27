@@ -22,7 +22,7 @@ const STEPS = [
 ]
 
 export function Onboarding() {
-  const { tenant, refreshTenant } = useAuth()
+  const { tenant, patchTenant } = useAuth()
   const navigate = useNavigate()
   const [step, setStep] = useState(0)
 
@@ -63,12 +63,17 @@ export function Onboarding() {
 
   const complete = useMutation({
     mutationFn: async () => {
-      await supabase.from('tenants')
+      const { error } = await supabase
+        .from('tenants')
         .update({ setup_complete: true })
         .eq('id', tenant!.id)
+      if (error) throw error
     },
-    onSuccess: async () => {
-      await refreshTenant()
+    onSuccess: () => {
+      // Optimistic update: set setup_complete locally so ProtectedRoute
+      // stops rendering Onboarding BEFORE the navigate call, avoiding the
+      // race condition where navigate fires but the route is still guarded.
+      patchTenant({ setup_complete: true })
       navigate('/campaigns/new')
     },
   })
