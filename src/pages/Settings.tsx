@@ -343,22 +343,35 @@ function BillingSection({ tenant }: { tenant: NonNullable<ReturnType<typeof useA
 
   async function callBillingSession(action: 'checkout' | 'portal', priceId?: string) {
     setLoadingPlan(priceId ?? 'portal')
+
+    // ── DEBUG ─────────────────────────────────────────────────────────────────
+    const matchedPlan = PLANS.find(p => p.priceIds.monthly === priceId || p.priceIds.annual === priceId)
+    const period = PLANS.find(p => p.priceIds.annual === priceId) ? 'annual' : 'monthly'
+    console.log(
+      `%c[Billing] action=${action} | priceId=${priceId} | plan=${matchedPlan?.name ?? '?'} | period=${period} | billingState=${billing}`,
+      'background:#1a1a2e;color:#f0a500;padding:2px 6px;border-radius:3px'
+    )
+    // ─────────────────────────────────────────────────────────────────────────
+
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const res = await supabase.functions.invoke('create-billing-session', {
-        body: {
-          action,
-          price_id: priceId,
-          return_url: window.location.href,
-          success_url: `${window.location.origin}/settings?billing=success`,
-          cancel_url:  `${window.location.origin}/settings?billing=cancel`,
-        },
-      })
+      const body = {
+        action,
+        price_id: priceId,
+        return_url: window.location.href,
+        success_url: `${window.location.origin}/settings?billing=success`,
+        cancel_url:  `${window.location.origin}/settings?billing=cancel`,
+      }
+      console.log('[Billing] request body →', JSON.stringify(body))
+
+      const res = await supabase.functions.invoke('create-billing-session', { body })
+
+      console.log('[Billing] response →', JSON.stringify(res.data), '| error:', res.error)
+
       if (res.error) throw new Error(res.error.message)
       const { url } = res.data as { url: string }
       if (url) window.location.href = url
     } catch (err) {
-      console.error('Billing error:', err)
+      console.error('[Billing] ERROR:', err)
       alert('Error al iniciar el pago. Inténtalo de nuevo.')
     } finally {
       setLoadingPlan(null)
