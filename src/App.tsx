@@ -16,6 +16,7 @@ import { Signup } from '@/pages/Signup'
 import { Admin } from '@/pages/Admin'
 import { Developers } from '@/pages/Developers'
 import { Contacts } from '@/pages/Contacts'
+import { Team } from '@/pages/Team'
 import { useThemeStore } from '@/store/themeStore'
 import { ToastContainer } from '@/components/ToastContainer'
 
@@ -42,6 +43,7 @@ function AppRoutes() {
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/developers" element={<Developers />} />
                 <Route path="/contacts" element={<Contacts />} />
+                <Route path="/team" element={<Team />} />
               </Routes>
             </AppShell>
           </ProtectedRoute>

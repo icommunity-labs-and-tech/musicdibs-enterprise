@@ -1,18 +1,48 @@
-import { useState, type FormEvent } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { useState, useEffect, type FormEvent } from 'react'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
+import { supabase } from '@/lib/supabase'
 
 export function Signup() {
   const { session, loading, signUp } = useAuth()
   const navigate = useNavigate()
 
-  const [orgName, setOrgName]     = useState('')
-  const [email, setEmail]         = useState('')
-  const [password, setPassword]   = useState('')
-  const [confirm, setConfirm]     = useState('')
-  const [error, setError]         = useState<string | null>(null)
+  const [searchParams] = useSearchParams()
+  const inviteToken = searchParams.get('token')
+
+  const [orgName, setOrgName]       = useState('')
+  const [email, setEmail]           = useState('')
+  const [password, setPassword]     = useState('')
+  const [confirm, setConfirm]       = useState('')
+  const [error, setError]           = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [needsVerification, setNeedsVerification] = useState(false)
+  const [inviteInfo, setInviteInfo]   = useState<{ tenant_name: string; role: string; invited_email: string } | null>(null)
+  const [inviteError, setInviteError] = useState<string | null>(null)
+
+  // Pre-validate invitation token and pre-fill email
+  useEffect(() => {
+    if (!inviteToken) return
+    supabase
+      .from('tenant_invitations')
+      .select('email, role, status, expires_at, tenants(name)')
+      .eq('token', inviteToken)
+      .eq('status', 'pending')
+      .single()
+      .then(({ data, error: e }) => {
+        if (e || !data) {
+          setInviteError('Esta invitación no es válida o ha expirado.')
+          return
+        }
+        if (new Date(data.expires_at) < new Date()) {
+          setInviteError('Esta invitación ha expirado.')
+          return
+        }
+        const tenantName = (data.tenants as unknown as { name: string } | null)?.name ?? 'tu equipo'
+        setInviteInfo({ tenant_name: tenantName, role: data.role, invited_email: data.email })
+        setEmail(data.email)  // pre-fill email
+      })
+  }, [inviteToken])
 
   if (!loading && session) return <Navigate to="/dashboard" replace />
 
@@ -34,18 +64,40 @@ export function Signup() {
     }
 
     setSubmitting(true)
+
+    if (inviteToken && inviteInfo) {
+      // Invited user flow: sign up then accept invitation
+      const { data: authData, error: authErr } = await supabase.auth.signUp({ email, password })
+      setSubmitting(false)
+      if (authErr) { setError(authErr.message); return }
+
+      const userId = authData.user?.id
+      if (!userId) { setNeedsVerification(true); return }
+
+      // Accept invitation — links user to tenant
+      const { data: acceptData, error: acceptErr } = await supabase.functions.invoke('accept-invitation', {
+        body: { token: inviteToken, user_id: userId },
+      })
+      if (acceptErr || acceptData?.error) {
+        setError(acceptData?.error ?? 'Error al aceptar la invitación')
+        return
+      }
+
+      if (authData.session) {
+        navigate('/dashboard', { replace: true })
+      } else {
+        setNeedsVerification(true)
+      }
+      return
+    }
+
+    // Regular signup (create new org)
+    if (!orgName.trim()) { setError('El nombre de la organización es obligatorio.'); setSubmitting(false); return }
     const { error: err, needsVerification: nv } = await signUp(email, password, orgName.trim())
     setSubmitting(false)
 
-    if (err) {
-      setError(err)
-      return
-    }
-    if (nv) {
-      setNeedsVerification(true)
-      return
-    }
-    // Session created → AuthContext will load tenant → ProtectedRoute shows Onboarding
+    if (err) { setError(err); return }
+    if (nv)  { setNeedsVerification(true); return }
     navigate('/dashboard', { replace: true })
   }
 
@@ -88,18 +140,40 @@ export function Signup() {
             </div>
           </Link>
           <h1 className="font-display text-2xl font-semibold text-sand-900 dark:text-night-50">
-            Crear cuenta
+            {inviteInfo ? 'Aceptar invitación' : 'Crear cuenta'}
           </h1>
           <p className="text-sm text-sand-900/50 dark:text-night-50/50 mt-1">
-            Empieza tu prueba gratuita de 14 días
+            {inviteInfo
+              ? <>Únete a <strong>{inviteInfo.tenant_name}</strong> como {inviteInfo.role}</>
+              : 'Empieza tu prueba gratuita de 14 días'}
           </p>
         </div>
+
+        {/* Invalid invite error */}
+        {inviteError && (
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30">
+            <i className="ti ti-alert-circle text-red-500 shrink-0" />
+            <p className="text-sm text-red-600 dark:text-red-400">{inviteError}</p>
+          </div>
+        )}
+
+        {/* Invite info banner */}
+        {inviteInfo && !inviteError && (
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-teal-50 dark:bg-teal-900/10 border border-teal-200 dark:border-teal-800/30">
+            <i className="ti ti-mail-check text-teal-500 shrink-0 text-lg" />
+            <div>
+              <p className="text-sm font-medium text-sand-900 dark:text-night-50">Invitación válida</p>
+              <p className="text-xs text-sand-900/60 dark:text-night-50/60">Accederás a <strong>{inviteInfo.tenant_name}</strong> con rol de <strong>{inviteInfo.role}</strong></p>
+            </div>
+          </div>
+        )}
 
         {/* Card */}
         <div className="bg-white dark:bg-[#1A1510] rounded-2xl border border-black/8 dark:border-white/8 shadow-sm p-6 space-y-4">
           <form onSubmit={handleSubmit} className="space-y-4">
 
-            {/* Org name */}
+            {/* Org name — hidden for invited users */}
+            {!inviteInfo && (
             <div>
               <label className="block text-xs font-medium text-sand-900/60 dark:text-night-50/60 mb-1.5">
                 Nombre de la organización
@@ -110,12 +184,13 @@ export function Signup() {
                   type="text"
                   value={orgName}
                   onChange={(e) => setOrgName(e.target.value)}
-                  required
+                  required={!inviteInfo}
                   placeholder="Acme Seguros S.L."
                   className="w-full pl-9 pr-3 py-2.5 rounded-lg text-sm bg-[#F5EFE6] dark:bg-[#0C0A08] border border-black/10 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-[#C9973A]/30 transition-all"
                 />
               </div>
             </div>
+            )}
 
             {/* Email */}
             <div>

@@ -8,6 +8,7 @@ const nav = [
   { to: '/contacts',  icon: 'ti-users',          label: 'Contactos' },
   { to: '/analytics', icon: 'ti-chart-bar', label: 'Analytics' },
   { to: '/settings', icon: 'ti-settings', label: 'Configuración' },
+  { to: '/team',       icon: 'ti-users-group', label: 'Equipo' },
   { to: '/developers', icon: 'ti-code', label: 'Developers' },
 ]
 
