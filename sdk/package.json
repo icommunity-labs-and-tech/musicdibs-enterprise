@@ -12,14 +12,30 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist"],
+  "files": ["dist", "README.md"],
   "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts --clean"
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
   },
-  "keywords": ["musicdibs", "audio", "email", "campaigns", "ai", "enterprise"],
+  "keywords": ["musicdibs", "audio", "email", "campaigns", "ai", "enterprise", "sdk"],
+  "author": "iCommunity Labs <dev@icommunity.io>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/icommunity-labs-and-tech/musicdibs-enterprise.git",
+    "directory": "sdk"
+  },
+  "homepage": "https://enterprise.musicdibs.com/developers",
   "devDependencies": {
-    "tsup": "^8.0.0",
-    "typescript": "^5.0.0"
+    "tsup": "^8.3.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
