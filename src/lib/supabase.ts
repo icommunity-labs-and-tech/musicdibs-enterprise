@@ -54,6 +54,7 @@ export interface Campaign {
   trigger_type: string | null
   trigger_time: string | null
   cost_estimate: number | null
+  mailerlite_campaign_id: string | null
   sent_at: string | null
   created_at: string
   updated_at: string
