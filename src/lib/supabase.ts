@@ -90,14 +90,86 @@ export interface CampaignStats {
   updated_at: string
 }
 
+export interface Contact {
+  id: string
+  tenant_id: string
+  email: string
+  first_name: string | null
+  last_name: string | null
+  company: string | null
+  phone: string | null
+  status: 'active' | 'unsubscribed' | 'bounced' | 'spam' | null
+  metadata: Record<string, unknown> | null
+  created_at: string
+  updated_at: string
+}
+
+export interface ContactList {
+  id: string
+  tenant_id: string
+  name: string
+  description: string | null
+  color: string | null
+  contact_count: number
+  mailerlite_group_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface ContactListMember {
+  id: string
+  contact_id: string
+  list_id: string
+  added_at: string
+}
+
+export interface AuditLog {
+  id: string
+  tenant_id: string
+  actor_id: string | null
+  actor_email: string | null
+  action: string
+  resource_type: string
+  resource_id: string | null
+  resource_name: string | null
+  metadata: Record<string, unknown> | null
+  created_at: string
+}
+
+export interface Notification {
+  id: string
+  tenant_id: string
+  user_id: string | null
+  type: string
+  title: string
+  body: string | null
+  read: boolean
+  href: string | null
+  created_at: string
+}
+
+export interface TenantSetting {
+  id: string
+  tenant_id: string
+  key: string
+  value: string | null
+  updated_at: string
+}
+
 export interface Database {
   public: {
     Tables: {
-      tenants:         { Row: Tenant;         Insert: Omit<Tenant, 'id' | 'created_at' | 'updated_at'> }
-      profiles:        { Row: Profile;        Insert: Omit<Profile, 'created_at'> }
-      campaigns:       { Row: Campaign;       Insert: Omit<Campaign, 'id' | 'created_at' | 'updated_at'> }
-      generation_jobs: { Row: GenerationJob;  Insert: Omit<GenerationJob, 'id' | 'created_at' | 'queued_at'> }
-      campaign_stats:  { Row: CampaignStats;  Insert: Omit<CampaignStats, 'id'> }
+      tenants:              { Row: Tenant;              Insert: Omit<Tenant, 'id' | 'created_at' | 'updated_at'> }
+      profiles:             { Row: Profile;             Insert: Omit<Profile, 'created_at'> }
+      campaigns:            { Row: Campaign;            Insert: Omit<Campaign, 'id' | 'created_at' | 'updated_at'> }
+      generation_jobs:      { Row: GenerationJob;       Insert: Omit<GenerationJob, 'id' | 'created_at' | 'queued_at'> }
+      campaign_stats:       { Row: CampaignStats;       Insert: Omit<CampaignStats, 'id'> }
+      contacts:             { Row: Contact;             Insert: Omit<Contact, 'id' | 'created_at' | 'updated_at'> }
+      contact_lists:        { Row: ContactList;         Insert: Omit<ContactList, 'id' | 'created_at' | 'updated_at'> }
+      contact_list_members: { Row: ContactListMember;   Insert: Omit<ContactListMember, 'id' | 'added_at'> }
+      audit_log:            { Row: AuditLog;            Insert: Omit<AuditLog, 'id' | 'created_at'> }
+      notifications:        { Row: Notification;        Insert: Omit<Notification, 'id' | 'created_at'> }
+      tenant_settings:      { Row: TenantSetting;       Insert: Omit<TenantSetting, 'id' | 'updated_at'> }
     }
   }
 }
