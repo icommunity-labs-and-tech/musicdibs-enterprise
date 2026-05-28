@@ -1,5 +1,5 @@
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { formatDistanceToNow, format } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -145,8 +145,25 @@ export function CampaignDetail() {
   const navigate = useNavigate()
   const toast = useToast()
   const qc = useQueryClient()
+  const { tenant } = useAuth()
   const [showConfirm, setShowConfirm] = useState(false)
   const [sending, setSending] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+
+  const syncStats = useCallback(async (campaignId: string) => {
+    setSyncing(true)
+    try {
+      await supabase.functions.invoke('sync-campaign-stats', {
+        body: { tenant_id: tenant?.id },
+      })
+      await qc.invalidateQueries({ queryKey: ['campaign_detail', campaignId] })
+      toast.success('Stats actualizadas', 'Datos sincronizados con MailerLite.')
+    } catch {
+      toast.error('Error al sincronizar', 'No se pudo conectar con MailerLite.')
+    } finally {
+      setSyncing(false)
+    }
+  }, [tenant?.id, qc, toast])
 
   async function sendCampaign() {
     if (!c) return
@@ -169,20 +186,28 @@ export function CampaignDetail() {
       setSending(false)
     }
   }
-  const { tenant } = useAuth()
-
   const { data, isLoading, error } = useQuery({
     queryKey: ['campaign_detail', id],
     enabled: !!id && !!tenant?.id,
     staleTime: 30_000,
     queryFn: async () => {
-      const [{ data: campaign, error: ce }, { data: stats }, { data: jobs }] = await Promise.all([
+      const [{ data: campaign, error: ce }, { data: stats }, { data: jobs }, { data: listRow }] = await Promise.all([
         supabase.from('campaigns').select('*').eq('id', id!).eq('tenant_id', tenant!.id).single(),
         supabase.from('campaign_stats').select('*').eq('campaign_id', id!).maybeSingle(),
         supabase.from('generation_jobs').select('*').eq('campaign_id', id!).order('created_at', { ascending: true }),
+        // resolve contact list name after we have the campaign
+        supabase.from('campaigns').select('contact_list_id').eq('id', id!).single().then(async ({ data: cmp }) => {
+          if (!cmp?.contact_list_id) return { data: null }
+          return supabase.from('contact_lists').select('id, name, mailerlite_group_id').eq('id', cmp.contact_list_id).maybeSingle()
+        }),
       ])
       if (ce) throw ce
-      return { campaign: campaign as Campaign, stats: stats as CampaignStats | null, jobs: (jobs ?? []) as GenerationJob[] }
+      return {
+        campaign: campaign as Campaign,
+        stats: stats as CampaignStats | null,
+        jobs: (jobs ?? []) as GenerationJob[],
+        contactList: listRow as { id: string; name: string; mailerlite_group_id: string | null } | null,
+      }
     },
   })
 
@@ -204,7 +229,7 @@ export function CampaignDetail() {
     )
   }
 
-  const { campaign: c, stats, jobs } = data
+  const { campaign: c, stats, jobs, contactList } = data
   const hasStats = stats && (stats.emails_sent ?? 0) > 0
   const openRate = hasStats ? (stats.emails_opened / stats.emails_sent) * 100 : null
   const clickRate = hasStats ? (stats.emails_clicked / stats.emails_sent) * 100 : null
@@ -255,6 +280,18 @@ export function CampaignDetail() {
 
           {/* primary CTAs */}
           <div className="flex items-center gap-2 shrink-0">
+            {/* sync stats button — only for sent campaigns */}
+            {c.status === 'sent' && (
+              <button
+                onClick={() => syncStats(c.id)}
+                disabled={syncing}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-sand-200 dark:border-night-600 text-sand-900/60 dark:text-night-50/60 hover:text-sand-900 dark:hover:text-night-50 text-sm font-medium transition-colors disabled:opacity-50"
+                title="Sincronizar stats con MailerLite"
+              >
+                <i className={`ti ti-refresh text-base ${syncing ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">{syncing ? 'Sync…' : 'Sync stats'}</span>
+              </button>
+            )}
             <button
               onClick={() => {
                 exportCampaignCSV(c, stats, jobs)
@@ -332,7 +369,17 @@ export function CampaignDetail() {
           <ConfigRow label="Duración audio" value={c.duration_seconds ? `${c.duration_seconds}s` : null} />
           <ConfigRow label="Asunto email" value={c.subject} />
           <ConfigRow label="Contactos" value={formatNumber(c.total_contacts)} />
+          <ConfigRow label="Lista de contactos" value={contactList?.name ?? null} />
           <ConfigRow label="Coste estimado" value={c.cost_estimate ? formatCurrency(c.cost_estimate) : null} />
+          {c.mailerlite_campaign_id && (
+            <ConfigRow label="MailerLite ID" value={c.mailerlite_campaign_id} />
+          )}
+          {contactList && !contactList.mailerlite_group_id && (
+            <div className="mt-2 flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+              <i className="ti ti-alert-triangle text-sm shrink-0" />
+              La lista no tiene grupo de MailerLite asignado
+            </div>
+          )}
           {c.ai_prompt && (
             <div className="mt-3 pt-3 border-t border-sand-50 dark:border-night-700/50">
               <p className="text-xs text-sand-900/40 dark:text-night-50/40 font-medium mb-1.5">Prompt IA</p>
