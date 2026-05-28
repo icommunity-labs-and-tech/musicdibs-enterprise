@@ -4,6 +4,8 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/store/toastStore'
 import { cn } from '@/lib/utils'
+import { usePlanUsage } from '@/hooks/usePlanUsage'
+import { formatLimit } from '@/lib/planLimits'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface ContactList {
@@ -222,6 +224,7 @@ export function Contacts() {
   const { tenant } = useAuth()
   const qc = useQueryClient()
   const toast = useToast()
+  const planUsage = usePlanUsage(tenant?.id, tenant?.plan)
 
   const [selectedList, setSelectedList]     = useState<string | null>(null) // null = all
   const [search, setSearch]                 = useState('')
@@ -314,6 +317,17 @@ export function Contacts() {
     const text = await file.text()
     const lines = text.trim().split('\n')
     if (lines.length < 2) { toast.error('CSV vacío o inválido'); return }
+
+    // Plan limit check
+    const rowCount = lines.length - 1
+    if (!planUsage.canImportContacts(rowCount)) {
+      const limit = formatLimit(planUsage.limits.contacts)
+      toast.error(
+        'Límite de contactos alcanzado',
+        `Tu plan permite ${limit} contactos. Ya tienes ${planUsage.used.contacts.toLocaleString('es')}. Actualiza tu plan en Configuración.`
+      )
+      return
+    }
 
     const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g, ''))
     const rows = lines.slice(1)

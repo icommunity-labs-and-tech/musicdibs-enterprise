@@ -6,6 +6,8 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { formatCurrency, cn } from '@/lib/utils'
 import { useToast } from '@/store/toastStore'
+import { usePlanUsage } from '@/hooks/usePlanUsage'
+import { formatLimit } from '@/lib/planLimits'
 
 type DraftUpdater = (patch: Partial<CampaignDraft>) => void
 
@@ -32,9 +34,18 @@ export function CampaignBuilder() {
 
   const step = draft.step
   const totalCost = (draft.totalContacts || 0) * COST_PER_CONTACT
+  const planUsage = usePlanUsage(tenant?.id, tenant?.plan)
 
   async function handleLaunch() {
     if (!tenant || !user) return
+
+    // ── Plan limit guard ──
+    if (!planUsage.canCreateCampaign) {
+      const limit = formatLimit(planUsage.limits.campaigns_per_month)
+      setLaunchError(`Has alcanzado el límite de ${limit} campaña${limit !== '1' ? 's' : ''} este mes en tu plan ${tenant.plan}. Actualiza tu plan en Configuración.`)
+      return
+    }
+
     setLaunching(true)
     setLaunchError(null)
 
@@ -157,6 +168,7 @@ export function CampaignBuilder() {
               launching={launching}
               error={launchError}
               onLaunch={handleLaunch}
+              planUsage={planUsage}
             />
           )}
 
@@ -501,17 +513,59 @@ function StepEntrega({ draft, update }: { draft: CampaignDraft; update: DraftUpd
   )
 }
 
-function StepLanzar({ cost, launching, error, onLaunch }: { cost: number; launching: boolean; error: string | null; onLaunch: () => void }) {
+function StepLanzar({ cost, launching, error, onLaunch, planUsage }: {
+  cost: number
+  launching: boolean
+  error: string | null
+  onLaunch: () => void
+  planUsage: ReturnType<typeof usePlanUsage>
+}) {
+  const { used, limits, status } = planUsage
+  const campLimitReached = status.campaigns === 'exceeded'
+
   return (
     <div className="space-y-5">
       <h2 className="font-display text-lg font-semibold text-sand-900 dark:text-night-50">Resumen y lanzamiento</h2>
+
+      {/* Plan usage bar */}
+      <div className={cn(
+        'rounded-xl border p-4 space-y-2 text-xs',
+        campLimitReached
+          ? 'border-red-300 bg-red-50 dark:bg-red-900/10 dark:border-red-700'
+          : status.campaigns === 'warn'
+          ? 'border-amber-300 bg-amber-50 dark:bg-amber-900/10 dark:border-amber-700'
+          : 'border-black/8 dark:border-white/8 bg-sand-50 dark:bg-night-900'
+      )}>
+        <div className="flex justify-between font-medium">
+          <span className="text-sand-900/70 dark:text-night-50/70">Campañas este mes</span>
+          <span className={cn(
+            campLimitReached ? 'text-red-600 dark:text-red-400' :
+            status.campaigns === 'warn' ? 'text-amber-600 dark:text-amber-400' :
+            'text-sand-900 dark:text-night-50'
+          )}>
+            {used.campaigns_this_month} / {formatLimit(limits.campaigns_per_month)}
+          </span>
+        </div>
+        {limits.campaigns_per_month < Infinity && (
+          <div className="w-full bg-black/10 dark:bg-white/10 rounded-full h-1.5">
+            <div
+              className={cn('h-1.5 rounded-full transition-all', campLimitReached ? 'bg-red-500' : status.campaigns === 'warn' ? 'bg-amber-500' : 'bg-[#C9973A]')}
+              style={{ width: `${Math.min(100, Math.round((used.campaigns_this_month / limits.campaigns_per_month) * 100))}%` }}
+            />
+          </div>
+        )}
+        {campLimitReached && (
+          <p className="text-red-600 dark:text-red-400">
+            Límite alcanzado. <a href="/settings" className="underline font-semibold">Actualiza tu plan</a> para lanzar más campañas.
+          </p>
+        )}
+      </div>
+
       <div className="space-y-3">
         {[
-          { label: 'Contactos', value: '1,247', icon: 'ti-users' },
-          { label: 'Assets a generar', value: '1,247 canciones + visualizers', icon: 'ti-wave-sine' },
-          { label: 'Coste total', value: formatCurrency(cost), icon: 'ti-coin-euro' },
-          { label: 'Tiempo estimado', value: '~2 horas', icon: 'ti-clock' },
-          { label: 'Período de envío', value: 'Junio 2026', icon: 'ti-calendar' },
+          { label: 'Contactos', value: (cost / 0.19).toFixed(0) === '0' ? '—' : Math.round(cost / 0.19).toLocaleString('es'), icon: 'ti-users' },
+          { label: 'Coste total estimado', value: formatCurrency(cost), icon: 'ti-coin-euro' },
+          { label: 'Tiempo estimado de generación', value: '~2 horas', icon: 'ti-clock' },
         ].map(({ label, value, icon }) => (
           <div key={label} className="flex items-center gap-3 py-3 border-b border-black/5 dark:border-white/5">
             <i className={cn('ti text-sm text-sand-900/30 dark:text-night-50/30 w-5 text-center', icon)} />
@@ -520,16 +574,17 @@ function StepLanzar({ cost, launching, error, onLaunch }: { cost: number; launch
           </div>
         ))}
       </div>
+
       {error && (
         <p className="text-xs text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">
           {error}
         </p>
       )}
-      <button onClick={onLaunch} disabled={launching}
+      <button onClick={onLaunch} disabled={launching || campLimitReached}
         className={cn(
           'w-full py-3 rounded-xl font-sans font-semibold text-sm flex items-center justify-center gap-2 transition-all',
-          launching
-            ? 'bg-[#C9973A]/50 text-white cursor-not-allowed'
+          launching || campLimitReached
+            ? 'bg-[#C9973A]/40 text-white cursor-not-allowed opacity-60'
             : 'bg-gradient-to-r from-[#C9973A] to-[#8C5E0A] text-white hover:opacity-90 shadow-lg shadow-[#C9973A]/20'
         )}>
         {launching ? (
@@ -555,11 +610,13 @@ function PreviewCard({ step, cost, draft }: { step: number; cost: number; draft:
           {draft.vertical && <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-[#2BB5A0]/15 text-[#0D7A64] dark:text-[#2BB5A0] capitalize">{draft.vertical}</span>}
         </div>
       </div>
-      {step >= 1 && (
+      {step >= 1 && draft.totalContacts > 0 && (
         <div className="py-3 px-4 rounded-xl bg-sand-50 dark:bg-night-900">
           <div className="flex items-center gap-2">
             <i className="ti ti-users text-sm text-[#C9973A]" />
-            <span className="text-sm font-mono font-semibold text-sand-900 dark:text-night-50">1,247</span>
+            <span className="text-sm font-mono font-semibold text-sand-900 dark:text-night-50">
+              {draft.totalContacts.toLocaleString('es')}
+            </span>
             <span className="text-xs text-sand-900/50 dark:text-night-50/50">contactos</span>
           </div>
         </div>

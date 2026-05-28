@@ -6,6 +6,8 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/store/toastStore'
+import { usePlanUsage } from '@/hooks/usePlanUsage'
+import { formatLimit, usagePercent, usageStatus } from '@/lib/planLimits'
 
 // ── types ────────────────────────────────────────────────────────────────────
 interface TenantSettings {
@@ -252,6 +254,7 @@ const ANNUAL_PRICE_IDS = ['price_1TbQ0DFULeu7PzK63w9dujNN', 'price_1TbQ0PFULeu7P
 function BillingSection({ tenant }: { tenant: NonNullable<ReturnType<typeof useAuth>['tenant']> }) {
   const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly')
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
+  const planUsage = usePlanUsage(tenant.id, tenant.plan)
 
   const currentPlan = tenant.plan ?? 'starter'
   const stripeStatus = tenant.stripe_status
@@ -328,6 +331,47 @@ function BillingSection({ tenant }: { tenant: NonNullable<ReturnType<typeof useA
             Gestionar suscripción
           </button>
         )}
+      </div>
+
+      {/* Usage meters */}
+      <div className="rounded-xl border border-sand-200 dark:border-night-700 divide-y divide-sand-100 dark:divide-night-700 overflow-hidden">
+        {[
+          {
+            label: 'Campañas este mes',
+            used: planUsage.used.campaigns_this_month,
+            limit: planUsage.limits.campaigns_per_month,
+          },
+          {
+            label: 'Contactos',
+            used: planUsage.used.contacts,
+            limit: planUsage.limits.contacts,
+          },
+          {
+            label: 'Usuarios',
+            used: planUsage.used.users,
+            limit: planUsage.limits.users,
+          },
+        ].map(({ label, used, limit }) => {
+          const pct = usagePercent(used, limit)
+          const st  = usageStatus(used, limit)
+          const barCls = st === 'exceeded' ? 'bg-red-500' : st === 'warn' ? 'bg-amber-500' : 'bg-[#C9973A]'
+          const valCls = st === 'exceeded' ? 'text-red-500' : st === 'warn' ? 'text-amber-500' : 'text-sand-900 dark:text-night-50'
+          return (
+            <div key={label} className="px-4 py-3 bg-white dark:bg-night-800">
+              <div className="flex items-center justify-between text-xs mb-1.5">
+                <span className="text-sand-900/60 dark:text-night-50/60 font-medium">{label}</span>
+                <span className={cn('font-semibold tabular-nums', valCls)}>
+                  {used.toLocaleString('es')} / {formatLimit(limit)}
+                </span>
+              </div>
+              {limit < Infinity && (
+                <div className="w-full bg-sand-100 dark:bg-night-700 rounded-full h-1.5">
+                  <div className={cn('h-1.5 rounded-full transition-all', barCls)} style={{ width: `${pct}%` }} />
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
 
       {/* Billing toggle */}
