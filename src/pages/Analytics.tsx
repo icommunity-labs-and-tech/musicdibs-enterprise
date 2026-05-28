@@ -1,10 +1,11 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend
 } from 'recharts'
 import { format, parseISO, startOfMonth } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { formatPercent, formatCurrency, formatNumber } from '@/lib/utils'
@@ -176,15 +177,17 @@ interface KpiCardProps {
   accent?: 'gold' | 'teal' | 'neutral'
 }
 function KpiCard({ icon, label, value, sub, accent = 'neutral' }: KpiCardProps) {
-  const accentCls = {
-    gold: 'bg-gold-50 dark:bg-gold-900/20 text-gold-600 dark:text-gold-400',
-    teal: 'bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400',
-    neutral: 'bg-sand-100 dark:bg-night-700 text-sand-500 dark:text-night-400',
-  }[accent]
+  const iconStyle =
+    accent === 'gold'    ? { background: '#C9973A22', color: '#8C5E0A' } :
+    accent === 'teal'    ? { background: '#2BB5A022', color: '#0D7A64' } :
+    undefined
 
   return (
     <div className="bg-white dark:bg-night-800 border border-sand-200 dark:border-night-700 rounded-2xl p-5 flex flex-col gap-3">
-      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${accentCls}`}>
+      <div
+        className="w-9 h-9 rounded-xl flex items-center justify-center bg-sand-100 dark:bg-night-700 text-sand-500 dark:text-night-400"
+        style={iconStyle}
+      >
         <i className={`ti ${icon} text-lg`} />
       </div>
       <div>
@@ -198,12 +201,38 @@ function KpiCard({ icon, label, value, sub, accent = 'neutral' }: KpiCardProps) 
 
 // ── main component ───────────────────────────────────────────────────────────
 export function Analytics() {
+  const { tenant } = useAuth()
   const { data, isLoading, error } = useAnalyticsData()
+  const queryClient = useQueryClient()
+  const [syncing, setSyncing] = useState(false)
+  const [lastSynced, setLastSynced] = useState<Date | null>(null)
+
+  // Auto-sync stats from MailerLite on mount (if tenant has sent campaigns)
+  useEffect(() => {
+    if (!tenant?.id) return
+    syncStats()
+  }, [tenant?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function syncStats() {
+    if (syncing) return
+    setSyncing(true)
+    try {
+      await supabase.functions.invoke('sync-campaign-stats', {
+        body: { tenant_id: tenant?.id },
+      })
+      await queryClient.invalidateQueries({ queryKey: ['analytics', tenant?.id] })
+      setLastSynced(new Date())
+    } catch (e) {
+      console.warn('sync-campaign-stats failed:', e)
+    } finally {
+      setSyncing(false)
+    }
+  }
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-32">
-        <div className="w-8 h-8 border-2 border-gold-400 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[#C9973A] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -235,6 +264,15 @@ export function Analytics() {
               : 'Rendimiento de campañas'}
           </p>
         </div>
+        <button
+          onClick={syncStats}
+          disabled={syncing}
+          className="flex items-center gap-2 px-3 h-8 rounded-lg border border-black/8 dark:border-white/8 bg-white dark:bg-night-800 text-sand-900/60 dark:text-night-50/60 hover:text-sand-900 dark:hover:text-night-50 hover:border-black/15 dark:hover:border-white/15 transition-all text-xs font-sans disabled:opacity-50"
+          title={lastSynced ? `Último sync: ${lastSynced.toLocaleTimeString('es')}` : 'Sincronizar con MailerLite'}
+        >
+          <i className={`ti ti-refresh text-sm ${syncing ? 'animate-spin' : ''}`} />
+          <span className="hidden sm:inline">{syncing ? 'Sincronizando…' : 'Sincronizar'}</span>
+        </button>
       </div>
 
       {!hasData ? <EmptyAnalytics /> : (
