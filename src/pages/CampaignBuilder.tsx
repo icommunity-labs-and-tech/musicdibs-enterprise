@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { useCampaignStore, type CampaignDraft } from '@/store/campaignStore'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
@@ -17,15 +18,6 @@ const STEPS = [
   { id: 5, label: 'Lanzar', icon: 'ti-rocket' },
 ]
 
-const SAMPLE_CONTACTS = [
-  { name: 'María García', birthday: '3 Jun', policy: 'Vida Premium', years: 8 },
-  { name: 'Carlos López', birthday: '8 Jun', policy: 'Hogar Plus', years: 3 },
-  { name: 'Ana Martínez', birthday: '11 Jun', policy: 'Vida Premium', years: 12 },
-  { name: 'Pedro Sánchez', birthday: '15 Jun', policy: 'Auto', years: 5 },
-  { name: 'Laura Fernández', birthday: '19 Jun', policy: 'Salud', years: 1 },
-]
-
-const TOTAL_CONTACTS = 1247
 const COST_PER_CONTACT = 0.19
 
 export function CampaignBuilder() {
@@ -39,7 +31,7 @@ export function CampaignBuilder() {
   const [campaignId, setCampaignId] = useState<string | null>(null)
 
   const step = draft.step
-  const totalCost = TOTAL_CONTACTS * COST_PER_CONTACT
+  const totalCost = (draft.totalContacts || 0) * COST_PER_CONTACT
 
   async function handleLaunch() {
     if (!tenant || !user) return
@@ -58,7 +50,8 @@ export function CampaignBuilder() {
           vertical: draft.vertical || 'insurance',
           goal: draft.goal || null,
           status: 'queued',
-          total_contacts: TOTAL_CONTACTS,
+          contact_list_id: draft.contact_list_id || null,
+          total_contacts: draft.totalContacts || 0,
           ai_prompt: draft.aiPrompt || null,
           tone: draft.tone,
           language: draft.language,
@@ -154,7 +147,7 @@ export function CampaignBuilder() {
         {/* Left panel */}
         <div className="bg-white dark:bg-[#1A1510] rounded-xl border border-black/8 dark:border-white/8 shadow-sm p-6 space-y-5">
           {step === 0 && <StepCampaign draft={draft} update={updateDraft} />}
-          {step === 1 && <StepAudiencia contacts={SAMPLE_CONTACTS} />}
+          {step === 1 && <StepAudiencia draft={draft} update={updateDraft} tenantId={tenant?.id ?? ''} />}
           {step === 2 && <StepPlantilla draft={draft} update={updateDraft} />}
           {step === 3 && <StepAssets draft={draft} update={updateDraft} />}
           {step === 4 && <StepEntrega draft={draft} update={updateDraft} />}
@@ -248,51 +241,116 @@ function StepCampaign({ draft, update }: { draft: CampaignDraft; update: DraftUp
   )
 }
 
-function StepAudiencia({ contacts }: { contacts: typeof SAMPLE_CONTACTS }) {
+interface ContactList {
+  id: string
+  name: string
+  description: string | null
+  contact_count: number
+  color: string
+  mailerlite_group_id: string | null
+}
+
+function StepAudiencia({ draft, update, tenantId }: {
+  draft: CampaignDraft
+  update: DraftUpdater
+  tenantId: string
+}) {
+  const { data: lists = [], isLoading } = useQuery<ContactList[]>({
+    queryKey: ['contact_lists', tenantId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('contact_lists')
+        .select('id, name, description, contact_count, color, mailerlite_group_id')
+        .eq('tenant_id', tenantId)
+        .order('name')
+      if (error) throw error
+      return data ?? []
+    },
+    enabled: !!tenantId,
+  })
+
+  const selected = lists.find(l => l.id === draft.contact_list_id)
+
+  function selectList(list: ContactList) {
+    update({ contact_list_id: list.id, totalContacts: list.contact_count })
+  }
+
   return (
     <div className="space-y-4">
       <h2 className="font-display text-lg font-semibold text-sand-900 dark:text-night-50">Audiencia</h2>
-      <div className="flex items-center gap-3 p-4 rounded-xl bg-sand-50 dark:bg-night-900 border border-black/8 dark:border-white/8">
-        <div className="w-10 h-10 rounded-xl bg-[#2BB5A0]/15 flex items-center justify-center">
-          <i className="ti ti-database text-[#0D7A64] dark:text-[#2BB5A0] text-lg" />
+      <p className="text-sm text-sand-900/60 dark:text-night-50/60">
+        Selecciona la lista de contactos que recibirá esta campaña.
+      </p>
+
+      {isLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <div className="w-5 h-5 border-2 border-[#C9973A] border-t-transparent rounded-full animate-spin" />
         </div>
-        <div>
-          <p className="text-sm font-sans font-semibold text-sand-900 dark:text-night-50">Salesforce CRM</p>
-          <p className="text-xs text-sand-900/50 dark:text-night-50/50">Conectado · Sincronizado hace 2h</p>
+      ) : lists.length === 0 ? (
+        <div className="text-center py-8 rounded-xl border border-dashed border-black/10 dark:border-white/10">
+          <i className="ti ti-users text-2xl text-sand-900/30 dark:text-night-50/30 mb-2 block" />
+          <p className="text-sm text-sand-900/50 dark:text-night-50/50">No hay listas de contactos.</p>
+          <a href="/contacts" className="mt-2 inline-block text-xs text-[#C9973A] hover:underline">
+            Crear lista en Contactos →
+          </a>
         </div>
-        <span className="ml-auto px-2 py-0.5 rounded-full text-xs font-medium bg-[#2BB5A0]/15 text-[#0D7A64] dark:text-[#2BB5A0]">Activo</span>
-      </div>
-      <div className="px-4 py-3 rounded-xl bg-[#C9973A]/8 dark:bg-[#C9973A]/12 border border-[#C9973A]/20">
-        <p className="text-2xl font-display font-semibold text-[#8C5E0A] dark:text-[#C9973A]">1,247</p>
-        <p className="text-xs text-sand-900/50 dark:text-night-50/50 mt-0.5">Contactos con cumpleaños en junio</p>
-      </div>
-      <div className="overflow-hidden rounded-xl border border-black/8 dark:border-white/8">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-sand-50 dark:bg-night-900">
-              <th className="px-4 py-2.5 text-left text-xs font-sans font-medium text-sand-900/40 dark:text-night-50/40">Nombre</th>
-              <th className="px-4 py-2.5 text-left text-xs font-sans font-medium text-sand-900/40 dark:text-night-50/40">Cumpleaños</th>
-              <th className="px-4 py-2.5 text-left text-xs font-sans font-medium text-sand-900/40 dark:text-night-50/40">Póliza</th>
-              <th className="px-4 py-2.5 text-left text-xs font-sans font-medium text-sand-900/40 dark:text-night-50/40">Años</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-black/5 dark:divide-white/5">
-            {contacts.map((c) => (
-              <tr key={c.name}>
-                <td className="px-4 py-2.5 font-sans font-medium text-sand-900 dark:text-night-50">{c.name}</td>
-                <td className="px-4 py-2.5 text-sand-900/60 dark:text-night-50/60">{c.birthday}</td>
-                <td className="px-4 py-2.5 text-sand-900/60 dark:text-night-50/60">{c.policy}</td>
-                <td className="px-4 py-2.5 text-sand-900/60 dark:text-night-50/60">{c.years}</td>
-              </tr>
-            ))}
-            <tr>
-              <td colSpan={4} className="px-4 py-2.5 text-xs text-sand-900/30 dark:text-night-50/30 text-center">
-                + 1,242 más…
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      ) : (
+        <div className="space-y-2">
+          {lists.map(list => {
+            const isSelected = draft.contact_list_id === list.id
+            const hasMl = !!list.mailerlite_group_id
+            return (
+              <button
+                key={list.id}
+                onClick={() => selectList(list)}
+                className={cn(
+                  'w-full flex items-center gap-4 p-4 rounded-xl border text-left transition-all',
+                  isSelected
+                    ? 'border-[#C9973A] bg-[#C9973A]/8 dark:bg-[#C9973A]/12'
+                    : 'border-black/8 dark:border-white/8 hover:border-[#C9973A]/40 hover:bg-sand-50 dark:hover:bg-night-900/50'
+                )}
+              >
+                <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: list.color }} />
+                <div className="flex-1 min-w-0">
+                  <p className={cn('text-sm font-medium truncate', isSelected ? 'text-[#8C5E0A] dark:text-[#C9973A]' : 'text-sand-900 dark:text-night-50')}>
+                    {list.name}
+                  </p>
+                  {list.description && (
+                    <p className="text-xs text-sand-900/40 dark:text-night-50/40 truncate mt-0.5">{list.description}</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  {!hasMl && (
+                    <span className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                      <i className="ti ti-alert-triangle text-xs" /> Sin grupo ML
+                    </span>
+                  )}
+                  <span className="text-sm font-semibold text-sand-900 dark:text-night-50">
+                    {list.contact_count.toLocaleString()}
+                  </span>
+                  <span className="text-xs text-sand-900/40 dark:text-night-50/40">contactos</span>
+                  {isSelected && <i className="ti ti-check text-[#C9973A] text-base" />}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {selected && (
+        <div className="px-4 py-3 rounded-xl bg-[#C9973A]/8 dark:bg-[#C9973A]/12 border border-[#C9973A]/20 flex items-center justify-between">
+          <div>
+            <p className="text-xs text-sand-900/50 dark:text-night-50/50">Lista seleccionada</p>
+            <p className="text-sm font-semibold text-[#8C5E0A] dark:text-[#C9973A]">{selected.name}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-2xl font-display font-semibold text-[#8C5E0A] dark:text-[#C9973A]">
+              {selected.contact_count.toLocaleString()}
+            </p>
+            <p className="text-xs text-sand-900/50 dark:text-night-50/50">contactos</p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -389,8 +447,8 @@ function StepAssets({ draft, update }: { draft: CampaignDraft; update: DraftUpda
           <span className="font-mono font-semibold text-[#C9973A]">€{COST_PER_CONTACT.toFixed(2)}</span>
         </div>
         <div className="flex items-center justify-between text-sm mt-2">
-          <span className="text-sand-900/60 dark:text-night-50/60">Total estimado (1,247 clientes)</span>
-          <span className="font-mono font-semibold text-sand-900 dark:text-night-50">{formatCurrency(TOTAL_CONTACTS * COST_PER_CONTACT)}</span>
+          <span className="text-sand-900/60 dark:text-night-50/60">Total estimado ({draft.totalContacts.toLocaleString()} clientes)</span>
+          <span className="font-mono font-semibold text-sand-900 dark:text-night-50">{formatCurrency(draft.totalContacts * COST_PER_CONTACT)}</span>
         </div>
       </div>
     </div>

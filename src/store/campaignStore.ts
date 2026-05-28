@@ -27,6 +27,7 @@ export interface CampaignDraft {
   goal: string
   crmSource: string
   totalContacts: number
+  contact_list_id: string | null
   aiPrompt: string
   tone: string
   language: string
@@ -57,6 +58,7 @@ const defaultDraft: CampaignDraft = {
   goal: '',
   crmSource: 'salesforce',
   totalContacts: 0,
+  contact_list_id: null,
   aiPrompt: '',
   tone: 'warm',
   language: 'es',

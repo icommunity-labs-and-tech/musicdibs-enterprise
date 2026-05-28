@@ -28,10 +28,10 @@ Deno.serve(async (req: Request) => {
     const { campaign_id } = await req.json()
     if (!campaign_id) return json({ error: "campaign_id required" }, 400)
 
-    // ── Load campaign ─────────────────────────────────────────────────────────
+    // ── Load campaign (with tenant and contact_list) ──────────────────────────
     const { data: campaign, error: campErr } = await supabase
       .from("campaigns")
-      .select("*, tenants!inner(id, name)")
+      .select("*, tenants!inner(id, name), contact_lists(id, mailerlite_group_id, name)")
       .eq("id", campaign_id)
       .single()
 
@@ -40,7 +40,7 @@ Deno.serve(async (req: Request) => {
 
     const tenantId = campaign.tenant_id
 
-    // ── Load Mailerlite API key ────────────────────────────────────────────────
+    // ── Load Mailerlite API key ───────────────────────────────────────────────
     const { data: settings } = await supabase
       .from("tenant_settings")
       .select("api_keys")
@@ -48,30 +48,57 @@ Deno.serve(async (req: Request) => {
       .single()
 
     const mailerliteKey = settings?.api_keys?.mailerlite
-    if (!mailerliteKey) return json({ error: "Mailerlite API key not configured. Add it in Settings → AI & Proveedores." }, 422)
+    if (!mailerliteKey) return json({ error: "Mailerlite API key not configured. Add it in Settings → Entrega de email." }, 422)
 
-    // ── Build Mailerlite campaign ─────────────────────────────────────────────
+    // ── Resolve Mailerlite group ID ───────────────────────────────────────────
+    // Priority: campaign.contact_list_id → fallback to first contact_list with group_id
+    let mailerliteGroupId: string | null = (campaign.contact_lists as any)?.mailerlite_group_id ?? null
+
+    if (!mailerliteGroupId) {
+      const { data: fallbackList } = await supabase
+        .from("contact_lists")
+        .select("mailerlite_group_id")
+        .eq("tenant_id", tenantId)
+        .not("mailerlite_group_id", "is", null)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .single()
+
+      mailerliteGroupId = fallbackList?.mailerlite_group_id ?? null
+    }
+
+    if (!mailerliteGroupId) {
+      return json({
+        error: "No Mailerlite group found. Assign a contact list to this campaign or configure a contact list with a Mailerlite group ID in Contactos."
+      }, 422)
+    }
+
+    console.log(`Sending campaign ${campaign_id} to Mailerlite group ${mailerliteGroupId}`)
+
+    // ── Build & send Mailerlite campaign ─────────────────────────────────────
     const mlHeaders = {
       "Authorization": `Bearer ${mailerliteKey}`,
       "Content-Type": "application/json",
       "Accept": "application/json",
     }
 
-    // 1. Create campaign in Mailerlite
     const subject = campaign.subject || campaign.name
     const fromName = (campaign.tenants as any)?.name || "MusicDibs"
 
+    // 1. Create campaign with subscriber group filter
     const createBody = {
       name: campaign.name,
       type: "regular",
-      language_id: campaign.language === "es" ? 1 : 2, // 1=ES, 2=EN
       emails: [{
         subject,
         from_name: fromName,
-        from: "noreply@musicdibs.com", // must be verified sender in Mailerlite
+        from: "noreply@musicdibs.com",
         content: buildEmailHtml(campaign),
         plain_text: buildEmailText(campaign),
       }],
+      filter: [[
+        { operator: "sent", args: { groups: [mailerliteGroupId] } }
+      ]],
     }
 
     const createRes = await fetch("https://connect.mailerlite.com/api/campaigns", {
@@ -90,22 +117,26 @@ Deno.serve(async (req: Request) => {
     const mlCampaignId = mlCampaign.data?.id
     if (!mlCampaignId) return json({ error: "Mailerlite did not return campaign id" }, 502)
 
-    // 2. Schedule / send immediately
-    const scheduleBody = { delivery: "instant" }
+    // 2. Schedule — send immediately
     const scheduleRes = await fetch(`https://connect.mailerlite.com/api/campaigns/${mlCampaignId}/schedule`, {
       method: "POST",
       headers: mlHeaders,
-      body: JSON.stringify(scheduleBody),
+      body: JSON.stringify({ delivery: "instant" }),
     })
 
     if (!scheduleRes.ok) {
       const err = await scheduleRes.text()
       console.error("Mailerlite schedule error:", err)
-      // Campaign created but not sent — still update status to reflect partial success
+      // Campaign created in ML but not sent — keep as ready so user can retry
+      await supabase.from("campaigns").update({
+        status: "ready",
+        mailerlite_campaign_id: mlCampaignId,
+      }).eq("id", campaign_id)
+      return json({ error: `Campaign created in Mailerlite (id: ${mlCampaignId}) but scheduling failed: ${err}` }, 502)
     }
 
-    // ── Update campaign status in Supabase ────────────────────────────────────
-    const { error: updateErr } = await supabase
+    // ── Update campaign status ────────────────────────────────────────────────
+    await supabase
       .from("campaigns")
       .update({
         status: "sent",
@@ -114,32 +145,16 @@ Deno.serve(async (req: Request) => {
       })
       .eq("id", campaign_id)
 
-    if (updateErr) console.error("Status update error:", updateErr)
-
-    // ── Insert notification ───────────────────────────────────────────────────
+    // ── Notification ──────────────────────────────────────────────────────────
     await supabase.from("notifications").insert({
       tenant_id: tenantId,
       type: "campaign_ready",
       title: "Campaña enviada",
-      body: `"${campaign.name}" se ha enviado correctamente.`,
+      body: `"${campaign.name}" se ha enviado a Mailerlite correctamente.`,
       link: `/campaigns/${campaign_id}`,
     })
 
-    // ── Dispatch webhook event ─────────────────────────────────────────────────
-    supabase.functions.invoke("webhook-dispatcher", {
-      body: {
-        tenant_id: tenantId,
-        event: "campaign.sent",
-        payload: {
-          campaign_id,
-          campaign_name: campaign.name,
-          mailerlite_campaign_id: mlCampaignId,
-          total_contacts: campaign.total_contacts,
-          sent_at: new Date().toISOString(),
-        },
-      },
-    }).then(() => {}) // fire and forget
-
+    console.log(`Campaign ${campaign_id} sent. ML campaign id: ${mlCampaignId}`)
     return json({ success: true, mailerlite_campaign_id: mlCampaignId })
 
   } catch (err) {

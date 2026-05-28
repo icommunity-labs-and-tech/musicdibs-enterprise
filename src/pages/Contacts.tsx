@@ -13,6 +13,7 @@ interface ContactList {
   contact_count: number
   color: string
   tags: string[]
+  mailerlite_group_id: string | null
   created_at: string
 }
 
@@ -58,16 +59,18 @@ function ListModal({ list, onClose, tenantId }: {
 }) {
   const qc = useQueryClient()
   const toast = useToast()
-  const [name, setName]   = useState(list?.name ?? '')
-  const [desc, setDesc]   = useState(list?.description ?? '')
-  const [color, setColor] = useState(list?.color ?? COLORS[0])
+  const [name, setName]         = useState(list?.name ?? '')
+  const [desc, setDesc]         = useState(list?.description ?? '')
+  const [color, setColor]       = useState(list?.color ?? COLORS[0])
+  const [mlGroupId, setMlGroupId] = useState(list?.mailerlite_group_id ?? '')
 
   const save = useMutation({
     mutationFn: async () => {
+      const payload = { name, description: desc, color, mailerlite_group_id: mlGroupId.trim() || null }
       if (list) {
-        await supabase.from('contact_lists').update({ name, description: desc, color }).eq('id', list.id)
+        await supabase.from('contact_lists').update(payload).eq('id', list.id)
       } else {
-        await supabase.from('contact_lists').insert({ tenant_id: tenantId, name, description: desc, color })
+        await supabase.from('contact_lists').insert({ tenant_id: tenantId, ...payload })
       }
     },
     onSuccess: () => {
@@ -101,6 +104,19 @@ function ListModal({ list, onClose, tenantId }: {
               placeholder="Para qué se usa esta lista…"
               className="w-full px-3 py-2 text-sm rounded-xl border border-sand-200 dark:border-night-600 bg-white dark:bg-night-700 text-sand-900 dark:text-night-50 focus:outline-none focus:ring-2 focus:ring-gold-400/50 resize-none"
             />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-sand-900/60 dark:text-night-50/60 mb-1.5">
+              Mailerlite Group ID <span className="text-sand-900/30 dark:text-night-50/30">(opcional)</span>
+            </label>
+            <input
+              value={mlGroupId} onChange={e => setMlGroupId(e.target.value)}
+              placeholder="Ej: 123456789"
+              className="w-full px-3 py-2 text-sm rounded-xl border border-sand-200 dark:border-night-600 bg-white dark:bg-night-700 text-sand-900 dark:text-night-50 focus:outline-none focus:ring-2 focus:ring-gold-400/50 font-mono"
+            />
+            <p className="mt-1 text-xs text-sand-900/40 dark:text-night-50/40">
+              Vincula esta lista a un grupo de Mailerlite para el envío de campañas de email.
+            </p>
           </div>
           <div>
             <label className="block text-xs font-medium text-sand-900/60 dark:text-night-50/60 mb-2">Color</label>
