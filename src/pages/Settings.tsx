@@ -17,6 +17,8 @@ interface TenantSettings {
     kie_ai?: string
     suno?: string
     mailerlite?: string
+    brevo?: string
+    mailing_provider?: 'mailerlite' | 'brevo'
   }
   integrations: {
     salesforce?: { connected: boolean; instance_url?: string }
@@ -522,6 +524,8 @@ export function Settings() {
   const [kieKey, setKieKey] = useState('')
   const [sunoKey, setSunoKey] = useState('')
   const [mailerliteKey, setMailerliteKey] = useState('')
+  const [brevoKey, setBrevoKey] = useState('')
+  const [mailingProvider, setMailingProvider] = useState<'mailerlite' | 'brevo'>('mailerlite')
   const [integrations, setIntegrations] = useState<TenantSettings['integrations']>({})
 
   useEffect(() => {
@@ -535,6 +539,8 @@ export function Settings() {
       setKieKey(settings.api_keys?.kie_ai ?? '')
       setSunoKey(settings.api_keys?.suno ?? '')
       setMailerliteKey(settings.api_keys?.mailerlite ?? '')
+      setBrevoKey(settings.api_keys?.brevo ?? '')
+      setMailingProvider(settings.api_keys?.mailing_provider ?? 'mailerlite')
       setIntegrations(settings.integrations ?? {})
     }
   }, [settings])
@@ -560,6 +566,8 @@ export function Settings() {
           ...(kieKey ? { kie_ai: kieKey } : {}),
           ...(sunoKey ? { suno: sunoKey } : {}),
           ...(mailerliteKey ? { mailerlite: mailerliteKey } : {}),
+          ...(brevoKey ? { brevo: brevoKey } : {}),
+          mailing_provider: mailingProvider,
         },
       }, { onConflict: 'tenant_id' })
       if (error) throw error
@@ -647,7 +655,48 @@ export function Settings() {
       </SectionCard>
 
       <SectionCard title="Entrega de email" description="Proveedor para el envío de las campañas">
-        <ApiKeyField label="Mailerlite API Key" hint="Tu clave de API de MailerLite" icon="ti-mail" value={mailerliteKey} onChange={setMailerliteKey} placeholder="mlite_…" />
+        {/* Provider selector */}
+        <div className="flex gap-2 mb-4">
+          {([
+            { value: 'mailerlite', label: 'MailerLite', icon: 'ti-mail' },
+            { value: 'brevo',      label: 'Brevo',      icon: 'ti-mail-forward' },
+          ] as const).map(p => (
+            <button
+              key={p.value}
+              onClick={() => setMailingProvider(p.value)}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-all',
+                mailingProvider === p.value
+                  ? 'border-[#C9973A] bg-[#C9973A]/8 text-[#8C5E0A] dark:text-[#C9973A]'
+                  : 'border-black/8 dark:border-white/8 text-sand-900/50 dark:text-night-50/50 hover:border-black/15 dark:hover:border-white/15'
+              )}
+            >
+              <i className={`ti ${p.icon} text-base`} />
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        {mailingProvider === 'mailerlite' && (
+          <ApiKeyField
+            label="MailerLite API Key"
+            hint="Cuenta → Integraciones → API → API Token"
+            icon="ti-mail"
+            value={mailerliteKey}
+            onChange={setMailerliteKey}
+            placeholder="mlite_…"
+          />
+        )}
+        {mailingProvider === 'brevo' && (
+          <ApiKeyField
+            label="Brevo API Key"
+            hint="Mi cuenta → SMTP y API → Claves API"
+            icon="ti-mail-forward"
+            value={brevoKey}
+            onChange={setBrevoKey}
+            placeholder="xkeysib-…"
+          />
+        )}
         <div className="flex justify-end pt-3">
           <button onClick={() => saveKeys.mutate()} disabled={saveKeys.isPending}
             className="text-sm font-medium px-5 py-2 rounded-xl bg-sand-900 dark:bg-night-50 text-white dark:text-night-900 hover:opacity-90 disabled:opacity-50 transition-opacity">

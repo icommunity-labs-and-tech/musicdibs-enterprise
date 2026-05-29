@@ -108,9 +108,13 @@ function ListModal({ list, onClose, tenantId }: {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-sand-900/60 dark:text-night-50/60 mb-1.5">
-              Mailerlite Group ID <span className="text-sand-900/30 dark:text-night-50/30">(opcional)</span>
+            <label className="block text-xs font-medium text-sand-900/60 dark:text-night-50/60 mb-1">
+              ID de grupo / lista (proveedor de mailing){' '}
+              <span className="text-sand-900/30 dark:text-night-50/30">(opcional)</span>
             </label>
+            <p className="text-[10px] text-sand-900/35 dark:text-night-50/35 mb-1.5">
+              MailerLite: Group ID · Brevo: List ID (número entero)
+            </p>
             <input
               value={mlGroupId} onChange={e => setMlGroupId(e.target.value)}
               placeholder="Ej: 123456789"
