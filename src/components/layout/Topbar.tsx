@@ -4,7 +4,11 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 
-export function Topbar() {
+interface TopbarProps {
+  onSearchOpen?: () => void
+}
+
+export function Topbar({ onSearchOpen }: TopbarProps) {
   const { isDark, toggle } = useThemeStore()
   const { tenant, profile, signOut } = useAuth()
   const navigate = useNavigate()
@@ -15,6 +19,8 @@ export function Topbar() {
     await signOut()
     navigate('/login')
   }
+
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
 
   return (
     <header className="h-14 border-b border-black/8 dark:border-white/8 bg-white dark:bg-[#1A1510] flex items-center px-5 gap-4 flex-shrink-0">
@@ -29,6 +35,19 @@ export function Topbar() {
           </p>
         )}
       </div>
+
+      {/* Search button */}
+      <button
+        onClick={onSearchOpen}
+        className="hidden sm:flex items-center gap-2 px-3 h-8 rounded-lg border border-black/8 dark:border-white/8 bg-sand-50 dark:bg-night-900 text-sand-900/40 dark:text-night-50/40 hover:text-sand-900 dark:hover:text-night-50 hover:border-black/15 dark:hover:border-white/15 transition-all text-xs font-sans"
+        title="Buscar (⌘K)"
+      >
+        <i className="ti ti-search text-sm" />
+        <span className="hidden md:inline">Buscar…</span>
+        <kbd className="hidden lg:flex items-center gap-0.5 ml-1 px-1 py-0.5 rounded text-[10px] font-mono bg-black/5 dark:bg-white/8 border border-black/8 dark:border-white/8">
+          {isMac ? '⌘' : 'Ctrl'}<span className="ml-0.5">K</span>
+        </kbd>
+      </button>
 
       {/* Dark mode toggle */}
       <button

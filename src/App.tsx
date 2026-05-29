@@ -14,6 +14,7 @@ import { Login } from '@/pages/Login'
 import { Landing } from '@/pages/Landing'
 import { Signup } from '@/pages/Signup'
 import { Admin } from '@/pages/Admin'
+import { AdminTenantDetail } from '@/pages/AdminTenantDetail'
 import { Developers } from '@/pages/Developers'
 import { Contacts } from '@/pages/Contacts'
 import { Team } from '@/pages/Team'
@@ -42,6 +43,7 @@ function AppRoutes() {
                 <Route path="/analytics" element={<Analytics />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/admin" element={<Admin />} />
+                <Route path="/admin/tenants/:id" element={<AdminTenantDetail />} />
                 <Route path="/developers" element={<Developers />} />
                 <Route path="/contacts" element={<Contacts />} />
                 <Route path="/team" element={<Team />} />

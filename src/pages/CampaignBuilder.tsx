@@ -92,6 +92,13 @@ export function CampaignBuilder() {
 
       if (jobErr) console.warn('Job insert warning:', jobErr.message)
 
+      // 3. Trigger generation (fire-and-forget — runs async in Edge Function)
+      supabase.functions.invoke('generate-campaign', {
+        body: { campaign_id: campaign.id },
+      }).then(({ error }) => {
+        if (error) console.warn('generate-campaign invoke error:', error.message)
+      })
+
       setCampaignId(campaign.id)
       setLaunched(true)
       toast.success('Campaña lanzada', `"${draft.name || 'Nueva campaña'}" está en cola de generación.`)

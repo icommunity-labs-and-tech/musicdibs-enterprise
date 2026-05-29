@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UX Audit — MusicDibs Enterprise Home</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8f7f4; color: #1a1a1a; }
+
+  /* Header */
+  .report-header {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    color: white;
+    padding: 48px;
+    border-bottom: 4px solid #C9972B;
+  }
+  .report-header .badge {
+    display: inline-block;
+    background: #C9972B;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .report-header h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+  .report-header p { color: #aaa; font-size: 14px; }
+  .report-header .meta { display: flex; gap: 24px; margin-top: 24px; }
+  .report-header .meta-item { text-align: center; }
+  .report-header .meta-item .num { font-size: 28px; font-weight: 800; color: #C9972B; }
+  .report-header .meta-item .label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+
+  /* Layout */
+  .container { max-width: 1100px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Score card */
+  .score-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+  .score-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    border: 2px solid transparent;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .score-card .score { font-size: 36px; font-weight: 900; }
+  .score-card .dimension { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+  .score-card.good { border-color: #22c55e; }
+  .score-card.good .score { color: #16a34a; }
+  .score-card.warn { border-color: #f59e0b; }
+  .score-card.warn .score { color: #d97706; }
+  .score-card.bad { border-color: #ef4444; }
+  .score-card.bad .score { color: #dc2626; }
+
+  /* Section */
+  .section { margin-bottom: 48px; }
+  .section-title {
+    font-size: 20px;
+    font-weight: 800;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title .icon { font-size: 22px; }
+
+  /* Issue cards */
+  .issue-grid { display: flex; flex-direction: column; gap: 16px; }
+  .issue-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px 24px;
+    border-left: 5px solid #e5e7eb;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 16px;
+    align-items: start;
+  }
+  .issue-card.critical { border-left-color: #ef4444; }
+  .issue-card.high { border-left-color: #f59e0b; }
+  .issue-card.medium { border-left-color: #3b82f6; }
+  .issue-card.low { border-left-color: #22c55e; }
+
+  .severity-badge {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    align-self: start;
+    margin-top: 2px;
+  }
+  .critical .severity-badge { background: #fee2e2; color: #dc2626; }
+  .high .severity-badge { background: #fef3c7; color: #d97706; }
+  .medium .severity-badge { background: #dbeafe; color: #1d4ed8; }
+  .low .severity-badge { background: #dcfce7; color: #16a34a; }
+
+  .issue-content h3 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+  .issue-content p { font-size: 13px; color: #555; line-height: 1.6; }
+  .issue-content .fix {
+    margin-top: 10px;
+    padding: 10px 14px;
+    background: #f8f7f4;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #333;
+    border-left: 3px solid #C9972B;
+  }
+  .issue-content .fix strong { color: #C9972B; }
+  .issue-section-tag {
+    font-size: 10px;
+    font-weight: 600;
+    color: #888;
+    background: #f3f4f6;
+    padding: 2px 8px;
+    border-radius: 8px;
+    white-space: nowrap;
+    align-self: start;
+  }
+
+  /* Code snippets */
+  .code-block {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 16px 20px;
+    border-radius: 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    margin-top: 10px;
+    overflow-x: auto;
+  }
+  .code-block .keyword { color: #569cd6; }
+  .code-block .string { color: #ce9178; }
+  .code-block .comment { color: #6a9955; }
+  .code-block .component { color: #4ec9b0; }
+  .code-block .prop { color: #9cdcfe; }
+
+  /* Before/After */
+  .ba-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
+  .ba-box { border-radius: 10px; padding: 16px; font-size: 13px; line-height: 1.6; }
+  .ba-box.before { background: #fee2e2; border: 1px solid #fca5a5; }
+  .ba-box.after { background: #dcfce7; border: 1px solid #86efac; }
+  .ba-box .ba-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .ba-box.before .ba-label { color: #dc2626; }
+  .ba-box.after .ba-label { color: #16a34a; }
+
+  /* Priority table */
+  .priority-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .priority-table th { background: #1a1a1a; color: white; padding: 12px 16px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+  .priority-table td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid #f3f4f6; }
+  .priority-table tr:last-child td { border-bottom: none; }
+  .priority-table tr:hover td { background: #faf9f7; }
+  .effort-badge { padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .effort-low { background: #dcfce7; color: #16a34a; }
+  .effort-med { background: #fef3c7; color: #d97706; }
+  .effort-high { background: #fee2e2; color: #dc2626; }
+  .impact-bar { display: flex; align-items: center; gap: 8px; }
+  .bar { height: 6px; border-radius: 3px; background: #C9972B; }
+
+  /* Conversion funnel */
+  .funnel { display: flex; flex-direction: column; gap: 4px; margin: 20px 0; }
+  .funnel-step {
+    padding: 12px 20px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .funnel-step .step-name { color: white; }
+  .funnel-step .step-issue { font-size: 11px; color: rgba(255,255,255,0.75); font-weight: 400; }
+  .f1 { background: #1d4ed8; width: 100%; }
+  .f2 { background: #2563eb; width: 88%; }
+  .f3 { background: #3b82f6; width: 72%; }
+  .f4 { background: #60a5fa; width: 55%; }
+  .f5 { background: #93c5fd; width: 40%; color: #1e3a8a !important; }
+  .f5 .step-name, .f5 .step-issue { color: #1e3a8a !important; }
+
+  /* Good things */
+  .good-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .good-card { background: white; border-radius: 12px; padding: 20px; border-top: 4px solid #22c55e; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+  .good-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+  .good-card p { font-size: 12px; color: #555; line-height: 1.6; }
+
+  /* Footer */
+  .report-footer { background: #1a1a1a; color: #888; text-align: center; padding: 24px; font-size: 12px; }
+  .report-footer a { color: #C9972B; text-decoration: none; }
+
+  /* Divider */
+  .divider { height: 1px; background: #e5e7eb; margin: 32px 0; }
+
+  /* Inline code */
+  code { background: #f3f4f6; padding: 1px 6px; border-radius: 4px; font-family: monospace; font-size: 12px; color: #374151; }
+</style>
+</head>
+<body>
+
+<div class="report-header">
+  <div class="badge">UX Audit · Mayo 2026</div>
+  <h1>MusicDibs Enterprise — Análisis UX Homepage</h1>
+  <p>enterprise.musicdibs.com · Revisión completa: hero, social proof, features, pricing, conversión</p>
+  <div class="meta">
+    <div class="meta-item"><div class="num">11</div><div class="label">Issues detectados</div></div>
+    <div class="meta-item"><div class="num">3</div><div class="label">Críticos</div></div>
+    <div class="meta-item"><div class="num">4</div><div class="label">Altos</div></div>
+    <div class="meta-item"><div class="num">6.2</div><div class="label">Score global /10</div></div>
+    <div class="meta-item"><div class="num">+40%</div><div class="label">Mejora est. conversión</div></div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Scores -->
+  <div class="section">
+    <div class="section-title"><span class="icon">📊</span> Puntuación por dimensión UX</div>
+    <div class="score-grid">
+      <div class="score-card warn">
+        <div class="score">7/10</div>
+        <div class="dimension">Hero &amp; Mensaje</div>
+      </div>
+      <div class="score-card bad">
+        <div class="score">3/10</div>
+        <div class="dimension">Social Proof</div>
+      </div>
+      <div class="score-card warn">
+        <div class="score">6/10</div>
+        <div class="dimension">Features</div>
+      </div>
+      <div class="score-card good">
+        <div class="score">8/10</div>
+        <div class="dimension">Pricing</div>
+      </div>
+      <div class="score-card warn">
+        <div class="score">7/10</div>
+        <div class="dimension">Visual Design</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lo que funciona bien -->
+  <div class="section">
+    <div class="section-title"><span class="icon">✅</span> Lo que funciona bien</div>
+    <div class="good-grid">
+      <div class="good-card">
+        <h3>💪 Propuesta de valor clara</h3>
+        <p>El H1 comunica directamente qué hace el producto: "campañas de email con audio generado por IA para empresas". Sin ambigüedad. El subtítulo refuerza con el benefit concreto (open rates 3×).</p>
+      </div>
+      <div class="good-card">
+        <h3>📐 Flujo de página lógico</h3>
+        <p>La estructura sigue el patrón correcto: problema → solución → prueba → features → precio → CTA. El journey de arriba a abajo es coherente y no confunde al usuario.</p>
+      </div>
+      <div class="good-card">
+        <h3>💰 Pricing transparente</h3>
+        <p>Precios visibles sin formulario de contacto para los dos primeros tiers. El "más popular" está bien destacado. La sección de precios es una de las más completas de la página.</p>
+      </div>
+      <div class="good-card">
+        <h3>🎨 Brand consistency</h3>
+        <p>La paleta beige+dorado es coherente de principio a fin. El tono editorial es profesional sin ser frío. Encaja con el posicionamiento premium enterprise.</p>
+      </div>
+      <div class="good-card">
+        <h3>📱 Mockup de dashboard</h3>
+        <p>Incluir un producto screenshot real (con datos de ejemplo) aumenta la credibilidad. Los KPIs del mockup (66.1% open rate) son impactantes y concretos.</p>
+      </div>
+      <div class="good-card">
+        <h3>⚡ Dual CTA en hero</h3>
+        <p>El par "Empezar gratis" + "Ver cómo funciona" cubre dos intenciones de usuario: el listo para convertir y el que necesita más información antes de comprometerse.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Issues críticos -->
+  <div class="section">
+    <div class="section-title"><span class="icon">🚨</span> Issues críticos — Impacto directo en conversión</div>
+    <div class="issue-grid">
+
+      <div class="issue-card critical">
+        <div class="severity-badge">Crítico</div>
+        <div class="issue-content">
+          <h3>Ausencia total de social proof empresarial</h3>
+          <p>La página vende un producto B2B de €299–€1.999/mes sin un solo logo de cliente, testimonial, ni caso de éxito nombrado. Para este ticket price, el decisor (CMO, Marketing Director) necesita ver que otras empresas similares ya confían en el producto antes de convertir. Es el equivalente a Stripe sin logos de clientes.</p>
+          <div class="fix">
+            <strong>Fix:</strong> Añadir sección "Confían en nosotros" con logos (aunque sean 3–5 early adopters con permiso). Si aún no hay empresas públicas, añadir al menos 2–3 testimonials con nombre, cargo y empresa real. El retorno en conversión de esto es 10× vs cualquier otra mejora de copy.
+          </div>
+          <div class="ba-grid">
+            <div class="ba-box before">
+              <div class="ba-label">❌ Actual</div>
+              Métricas genéricas sin atribución: "66% open rate promedio" — ¿de quién? ¿cuándo? ¿en qué verticales?
+            </div>
+            <div class="ba-box after">
+              <div class="ba-label">✅ Propuesta</div>
+              Sección post-hero: "Banco X consiguió 74% open rate en su campaña de fidelización VIP". Añadir foto, nombre y cargo.
+            </div>
+          </div>
+        </div>
+        <div class="issue-section-tag">Social Proof</div>
+      </div>
+
+      <div class="issue-card critical">
+        <div class="severity-badge">Crítico</div>
+        <div class="issue-content">
+          <h3>Iconos placeholder vacíos en sección de Features</h3>
+          <p>Las 6 tarjetas de funcionalidades tienen iconos que son cuadros beige vacíos — claramente sin terminar. En una landing enterprise de casi €300/mes, esto genera desconfianza inmediata. El usuario infiere "si esto no está terminado, ¿lo estará el producto?".</p>
+          <div class="fix">
+            <strong>Fix inmediato (30 min):</strong> Usar lucide-react o Heroicons para iconos relevantes. Alternativamente, emojis en grande (🎵 🎯 📊 🔗 🏢 🔒) funcionan perfectamente hasta tener iconos propios. No dejar cuadros vacíos en producción.
+          </div>
+          <div class="code-block">
+<span class="comment">// Ejemplo con lucide-react — reemplaza los placeholder boxes</span>
+<span class="keyword">import</span> { Music, Mail, BarChart2, Link, Building2, Shield } <span class="keyword">from</span> <span class="string">'lucide-react'</span>
+
+<span class="keyword">const</span> features = [
+  { <span class="prop">icon</span>: <span class="component">Music</span>, <span class="prop">title</span>: <span class="string">'Generación de audio con IA'</span> },
+  { <span class="prop">icon</span>: <span class="component">Mail</span>, <span class="prop">title</span>: <span class="string">'Email marketing emocional'</span> },
+  { <span class="prop">icon</span>: <span class="component">BarChart2</span>, <span class="prop">title</span>: <span class="string">'Analytics en tiempo real'</span> },
+  { <span class="prop">icon</span>: <span class="component">Link</span>, <span class="prop">title</span>: <span class="string">'Integraciones CRM'</span> },
+  { <span class="prop">icon</span>: <span class="component">Building2</span>, <span class="prop">title</span>: <span class="string">'Multi-vertical y multi-tenant'</span> },
+  { <span class="prop">icon</span>: <span class="component">Shield</span>, <span class="prop">title</span>: <span class="string">'Infraestructura enterprise'</span> },
+]</div>
+        </div>
+        <div class="issue-section-tag">Features</div>
+      </div>
+
+      <div class="issue-card critical">
+        <div class="severity-badge">Crítico</div>
+        <div class="issue-content">
+          <h3>Chips de sector son decorativos, no funcionales</h3>
+          <p>"Adaptado para cada sector" con chips de Seguros, Banca, Música, Retail, Teleco, Inmobiliaria no hace nada al hacer click. Son elementos que prometen contenido específico por vertical y no lo entregan. Esto es un patrón de engagement con alta intención del usuario que se pierde completamente.</p>
+          <div class="fix">
+            <strong>Fix:</strong> Convertir en tabs interactivos que muestren un caso de uso específico por sector: ejemplo de campaña, métricas reales y quote de cliente del sector. Alternativamente, si no hay recursos, eliminar los chips y reemplazar por un único ejemplo fuerte con datos reales.
+          </div>
+          <div class="code-block">
+<span class="comment">// Patrón recomendado — sector tabs con contenido dinámico</span>
+<span class="keyword">const</span> [activeSector, setActiveSector] = useState(<span class="string">'Banca'</span>)
+
+<span class="keyword">const</span> sectorContent = {
+  Banca: {
+    example: <span class="string">'Campaña fidelización VIP — 74% open rate'</span>,
+    metric: <span class="string">'3.2× más clicks que email estándar'</span>,
+    useCase: <span class="string">'Notificaciones de producto + música ambient personalizada'</span>
+  },
+  Seguros: { ... },
+  <span class="comment">// ...</span>
+}
+
+<span class="comment">// Render tab content below chips based on activeSector</span></div>
+        </div>
+        <div class="issue-section-tag">Sectores</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Issues altos -->
+  <div class="section">
+    <div class="section-title"><span class="icon">⚠️</span> Issues de alta prioridad</div>
+    <div class="issue-grid">
+
+      <div class="issue-card high">
+        <div class="severity-badge">Alto</div>
+        <div class="issue-content">
+          <h3>Copy técnico en features orientadas a marketing teams</h3>
+          <p>La audiencia objetivo son marketing directors y CMOs, no CTOs. Textos como "RLS por tenant, cifrado en tránsito y reposo, audit logs, SLA 99.9%" son irrelevantes para el decisor de marketing. Lo mismo con "Multi-vertical y multi-tenant" — esta terminología es interna, no orientada al beneficio del cliente.</p>
+          <div class="fix">
+            <strong>Fix:</strong> Reescribir desde el beneficio del usuario marketing, no desde la arquitectura técnica.
+          </div>
+          <div class="ba-grid">
+            <div class="ba-box before">
+              <div class="ba-label">❌ Actual</div>
+              "RLS por tenant, cifrado en tránsito y reposo, audit logs, SLA 99.9%. GDPR-ready."
+            </div>
+            <div class="ba-box after">
+              <div class="ba-label">✅ Propuesta</div>
+              "Cada cliente en su propio espacio aislado. Cumplimiento GDPR certificado. 99.9% uptime garantizado por contrato."
+            </div>
+          </div>
+        </div>
+        <div class="issue-section-tag">Copy / Features</div>
+      </div>
+
+      <div class="issue-card high">
+        <div class="severity-badge">Alto</div>
+        <div class="issue-content">
+          <h3>Pricing sin toggle mensual/anual y sin reducción de fricción</h3>
+          <p>El subtítulo "Anual con 2 meses gratis. Cancela cuando quieras." es buena información pero está enterrada. No hay toggle para ver el precio mensual equivalente vs anual, lo que dificulta la comparación mental del decisor. Además, el CTA principal del hero dice "Empezar gratis" pero no queda claro si es un freemium permanente o un trial — diferencia crítica para la percepción de riesgo.</p>
+          <div class="fix">
+            <strong>Fix:</strong> Añadir toggle mensual/anual en la sección de precios con el badge "2 meses gratis" en el switch. Añadir bajo el CTA principal: "Sin tarjeta de crédito · Cancela cuando quieras · Trial 14 días".
+          </div>
+          <div class="code-block">
+<span class="comment">// Toggle pricing — patrón estándar SaaS</span>
+<span class="keyword">const</span> [billing, setBilling] = useState(<span class="string">'annual'</span>)
+
+<span class="keyword">const</span> price = billing === <span class="string">'annual'</span>
+  ? { starter: <span class="string">249</span>, pro: <span class="string">666</span> }   <span class="comment">// precio/mes facturado anual</span>
+  : { starter: <span class="string">299</span>, pro: <span class="string">799</span> }   <span class="comment">// precio/mes facturado mensual</span>
+
+<span class="comment">// Mostrar ahorro: "Ahorras €600/año" en badge junto al toggle</span></div>
+        </div>
+        <div class="issue-section-tag">Pricing</div>
+      </div>
+
+      <div class="issue-card high">
+        <div class="severity-badge">Alto</div>
+        <div class="issue-content">
+          <h3>Badge "Powered by KIE.ai + Suno" sin contexto para el usuario</h3>
+          <p>El badge en el hero asume que el visitante sabe qué es KIE.ai. Suno tiene algo de brand awareness en tech, pero en el mercado de marketing B2B (el target) es desconocido. El badge puede generar confusión: ¿es una marca blanca? ¿tengo que contratar a KIE.ai también? ¿qué pasa si Suno cambia sus términos?</p>
+          <div class="fix">
+            <strong>Fix opción A:</strong> Eliminar el badge y moverlo al footer o a la sección de features donde se puede explicar. <br>
+            <strong>Fix opción B:</strong> Añadir tooltip o micro-copy explicativo: "Tecnología de generación musical líder en el mercado".
+          </div>
+        </div>
+        <div class="issue-section-tag">Hero</div>
+      </div>
+
+      <div class="issue-card high">
+        <div class="severity-badge">Alto</div>
+        <div class="issue-content">
+          <h3>Nav escasa — falta contenido de bottom-funnel</h3>
+          <p>El nav solo tiene Funcionalidades, Resultados, Precios. Para un producto enterprise B2B sin señales de confianza en la página, el usuario que no convierte en primera visita necesita rutas alternativas: blog, casos de éxito, sobre el equipo, documentación. Actualmente si el usuario no se convence, no tiene a dónde ir — rebota.</p>
+          <div class="fix">
+            <strong>Fix:</strong> Añadir al nav: "Casos de uso" (por sector), "Recursos" (blog/docs), y opcionalmente "Sobre nosotros". Esto también ayuda al SEO en un momento temprano del producto.
+          </div>
+        </div>
+        <div class="issue-section-tag">Navegación</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Issues medios -->
+  <div class="section">
+    <div class="section-title"><span class="icon">🔵</span> Issues de media prioridad</div>
+    <div class="issue-grid">
+
+      <div class="issue-card medium">
+        <div class="severity-badge">Medio</div>
+        <div class="issue-content">
+          <h3>CTA final débil — falta reducir fricción y urgencia</h3>
+          <p>La sección final "Listo para transformar tus campañas" tiene un buen headline pero el CTA "Empezar gratis — 14 días" no está acompañado de ningún trust signal. Para usuarios que llegaron hasta el final de la página y aún no convirtieron, necesitan el último empujón.</p>
+          <div class="fix">
+            <strong>Fix:</strong> Añadir bajo el botón: "✓ Sin tarjeta de crédito · ✓ Onboarding asistido · ✓ Soporte durante el trial" y un counter social tipo "Únete a las X empresas que ya usan MusicDibs Enterprise".
+          </div>
+        </div>
+        <div class="issue-section-tag">CTA Final</div>
+      </div>
+
+      <div class="issue-card medium">
+        <div class="severity-badge">Medio</div>
+        <div class="issue-content">
+          <h3>Las métricas de social proof no tienen atribución</h3>
+          <p>El bloque de "66% open rate promedio · 18% click rate · 3× vs email estándar · &lt;60s de brief a campaña" son métricas impresionantes pero sin atribución generan escepticismo. ¿Son internas? ¿Benchmarks del mercado? ¿Todos los clientes o los mejores?</p>
+          <div class="fix">
+            <strong>Fix:</strong> Añadir: "Basado en X campañas enviadas en 2025" o "vs. benchmark industria MailChimp/HubSpot". Si son métricas propias, decirlo explícitamente. La transparencia aumenta, no disminuye, la credibilidad.
+          </div>
+        </div>
+        <div class="issue-section-tag">Social Proof</div>
+      </div>
+
+      <div class="issue-card medium">
+        <div class="severity-badge">Medio</div>
+        <div class="issue-content">
+          <h3>Gap grande entre tiers Professional y Enterprise sin mid-tier</h3>
+          <p>El salto de €799 a €1.999/mes (2.5×) sin features intermedias puede hacer que muchos clientes potenciales medianos no encuentren su tier natural. El plan Enterprise sin precio visible ("Hablar con ventas") también puede frenar a empresas medianas que no quieren un proceso de ventas.</p>
+          <div class="fix">
+            <strong>Fix:</strong> Considerar añadir un tier "Business" a ~€1.199/mes para 50 campañas/250k contactos/10 usuarios. Alternativamente, mostrar en Enterprise al menos el rango de precio ("desde €1.999/mes") para no generar la percepción de "price-on-request = caro".
+          </div>
+        </div>
+        <div class="issue-section-tag">Pricing</div>
+      </div>
+
+      <div class="issue-card medium">
+        <div class="severity-badge">Medio</div>
+        <div class="issue-content">
+          <h3>Sin FAQ — bloquea objeciones comunes no resueltas</h3>
+          <p>No hay sección de preguntas frecuentes. Para un producto que combina IA + audio + email marketing en sectores regulados (banca, seguros), los compradores tienen objeciones legítimas: ¿qué pasa con los derechos del audio generado? ¿Es GDPR compliant el audio? ¿Funciona con mi ESP actual?</p>
+          <div class="fix">
+            <strong>Fix:</strong> Añadir sección FAQ con 5–7 preguntas clave. En B2B enterprise, una FAQ bien escrita puede resolver el 60% de las objeciones del proceso de ventas antes de que lleguen al equipo de ventas.
+          </div>
+        </div>
+        <div class="issue-section-tag">Bottom Funnel</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Funnel analysis -->
+  <div class="section">
+    <div class="section-title"><span class="icon">🔽</span> Análisis del funnel de conversión</div>
+    <div class="funnel">
+      <div class="funnel-step f1">
+        <span class="step-name">👁 Impresión inicial (Hero)</span>
+        <span class="step-issue">100% visitantes · Mensaje claro, buen contraste visual</span>
+      </div>
+      <div class="funnel-step f2">
+        <span class="step-name">📊 Engagement (Social Proof)</span>
+        <span class="step-issue">~88% · Drop: métricas sin atribución, sin logos de clientes</span>
+      </div>
+      <div class="funnel-step f3">
+        <span class="step-name">🔍 Evaluación (Features + Sectores)</span>
+        <span class="step-issue">~72% · Drop: iconos vacíos, chips no funcionales, copy técnico</span>
+      </div>
+      <div class="funnel-step f4">
+        <span class="step-name">💰 Consideración (Pricing)</span>
+        <span class="step-issue">~55% · Drop: sin toggle mensual/anual, gap de tiers</span>
+      </div>
+      <div class="funnel-step f5">
+        <span class="step-name">✅ Conversión (CTA)</span>
+        <span class="step-issue">~40% de los que llegan aquí · Estimación: &lt;2% del total</span>
+      </div>
+    </div>
+    <p style="font-size:12px;color:#888;margin-top:12px;">* Estimaciones basadas en benchmarks B2B SaaS enterprise. El principal punto de fuga es la transición Social Proof → Evaluación por ausencia de credibilidad empresarial.</p>
+  </div>
+
+  <!-- Priority table -->
+  <div class="section">
+    <div class="section-title"><span class="icon">🎯</span> Roadmap de mejoras por impacto/esfuerzo</div>
+    <table class="priority-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Mejora</th>
+          <th>Impacto en conversión</th>
+          <th>Esfuerzo</th>
+          <th>Tiempo est.</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>1</strong></td>
+          <td>Reemplazar iconos placeholder con lucide-react</td>
+          <td><div class="impact-bar"><div class="bar" style="width:70px"></div> Alto</div></td>
+          <td><span class="effort-badge effort-low">Bajo</span></td>
+          <td>30 min</td>
+        </tr>
+        <tr>
+          <td><strong>2</strong></td>
+          <td>Añadir trust signals bajo CTA hero ("Sin tarjeta, 14 días, cancela")</td>
+          <td><div class="impact-bar"><div class="bar" style="width:65px"></div> Alto</div></td>
+          <td><span class="effort-badge effort-low">Bajo</span></td>
+          <td>15 min</td>
+        </tr>
+        <tr>
+          <td><strong>3</strong></td>
+          <td>Añadir toggle mensual/anual en pricing con ahorro visible</td>
+          <td><div class="impact-bar"><div class="bar" style="width:60px"></div> Alto</div></td>
+          <td><span class="effort-badge effort-low">Bajo</span></td>
+          <td>2 h</td>
+        </tr>
+        <tr>
+          <td><strong>4</strong></td>
+          <td>Añadir atribución a las métricas de social proof</td>
+          <td><div class="impact-bar"><div class="bar" style="width:55px"></div> Medio-alto</div></td>
+          <td><span class="effort-badge effort-low">Bajo</span></td>
+          <td>1 h</td>
+        </tr>
+        <tr>
+          <td><strong>5</strong></td>
+          <td>Logos de clientes (mínimo 3) + testimonial con nombre y empresa</td>
+          <td><div class="impact-bar"><div class="bar" style="width:100px"></div> Muy alto</div></td>
+          <td><span class="effort-badge effort-med">Medio</span></td>
+          <td>1–2 días</td>
+        </tr>
+        <tr>
+          <td><strong>6</strong></td>
+          <td>Hacer tabs de sector interactivos con contenido por vertical</td>
+          <td><div class="impact-bar"><div class="bar" style="width:75px"></div> Alto</div></td>
+          <td><span class="effort-badge effort-med">Medio</span></td>
+          <td>1 día</td>
+        </tr>
+        <tr>
+          <td><strong>7</strong></td>
+          <td>Reescribir copy features desde beneficio usuario marketing (no tech)</td>
+          <td><div class="impact-bar"><div class="bar" style="width:65px"></div> Alto</div></td>
+          <td><span class="effort-badge effort-low">Bajo</span></td>
+          <td>2 h</td>
+        </tr>
+        <tr>
+          <td><strong>8</strong></td>
+          <td>Añadir sección FAQ con 5–7 preguntas clave</td>
+          <td><div class="impact-bar"><div class="bar" style="width:55px"></div> Medio-alto</div></td>
+          <td><span class="effort-badge effort-med">Medio</span></td>
+          <td>4 h</td>
+        </tr>
+        <tr>
+          <td><strong>9</strong></td>
+          <td>Ampliar navegación: Casos de uso + Recursos</td>
+          <td><div class="impact-bar"><div class="bar" style="width:45px"></div> Medio</div></td>
+          <td><span class="effort-badge effort-high">Alto</span></td>
+          <td>3–5 días</td>
+        </tr>
+        <tr>
+          <td><strong>10</strong></td>
+          <td>Tier intermedio Business ~€1.199 en pricing</td>
+          <td><div class="impact-bar"><div class="bar" style="width:50px"></div> Medio</div></td>
+          <td><span class="effort-badge effort-med">Medio</span></td>
+          <td>1 día</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Copy rewrites -->
+  <div class="section">
+    <div class="section-title"><span class="icon">✏️</span> Propuestas de copy — cambios concretos</div>
+    <div class="issue-grid">
+
+      <div class="issue-card low">
+        <div class="severity-badge" style="background:#f3f4f6;color:#374151;">Copy</div>
+        <div class="issue-content">
+          <h3>H1 Hero — versión más orientada al outcome</h3>
+          <div class="ba-grid">
+            <div class="ba-box before">
+              <div class="ba-label">❌ Actual</div>
+              "Campañas de email con audio generado por IA para empresas"
+            </div>
+            <div class="ba-box after">
+              <div class="ba-label">✅ Alternativa A (outcome-first)</div>
+              "Triplica el open rate de tus campañas de email con música generada por IA"
+            </div>
+          </div>
+          <div class="ba-grid" style="margin-top:8px;">
+            <div class="ba-box after" style="background:#eff6ff;border-color:#93c5fd;">
+              <div class="ba-label" style="color:#1d4ed8;">✅ Alternativa B (diferenciación)</div>
+              "El único email marketing que tus clientes escuchan"
+            </div>
+            <div class="ba-box after" style="background:#faf5ff;border-color:#c084fc;">
+              <div class="ba-label" style="color:#7c3aed;">✅ Alternativa C (bold)</div>
+              "Emails que generan emoción. Audio IA + data = 66% open rate"
+            </div>
+          </div>
+        </div>
+        <div class="issue-section-tag">Hero</div>
+      </div>
+
+      <div class="issue-card low">
+        <div class="severity-badge" style="background:#f3f4f6;color:#374151;">Copy</div>
+        <div class="issue-content">
+          <h3>Feature "Multi-vertical y multi-tenant" — reescritura orientada a beneficio</h3>
+          <div class="ba-grid">
+            <div class="ba-box before">
+              <div class="ba-label">❌ Actual</div>
+              "Seguros, banca, retail, música. Cada organización con su propio espacio, datos y configuración."
+            </div>
+            <div class="ba-box after">
+              <div class="ba-label">✅ Propuesta</div>
+              "Cada equipo, marca o cliente trabaja en su propio entorno aislado. Perfecto para agencias y holdings con múltiples marcas."
+            </div>
+          </div>
+        </div>
+        <div class="issue-section-tag">Features</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Quick wins sprint -->
+  <div class="section">
+    <div class="section-title"><span class="icon">⚡</span> Sprint de quick wins — 1 día de trabajo, máximo impacto</div>
+    <div style="background:white;border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+      <p style="font-size:13px;color:#555;margin-bottom:16px;">Estas 5 mejoras son todas de front-end puro, sin backend, sin diseño nuevo. Un developer puede hacer el sprint completo en &lt;1 día:</p>
+      <ol style="list-style:none;counter-reset:step;display:flex;flex-direction:column;gap:12px;">
+        <li style="display:flex;gap:12px;align-items:start;counter-increment:step;">
+          <span style="background:#C9972B;color:white;font-weight:800;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;">1</span>
+          <div>
+            <strong>Iconos en features cards</strong> — <code>npm install lucide-react</code> + asignar icono a cada feature. 30 min.
+          </div>
+        </li>
+        <li style="display:flex;gap:12px;align-items:start;">
+          <span style="background:#C9972B;color:white;font-weight:800;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;">2</span>
+          <div>
+            <strong>Trust string bajo CTA hero</strong> — Añadir <code>&lt;p&gt;✓ Sin tarjeta · ✓ 14 días gratis · ✓ Cancela cuando quieras&lt;/p&gt;</code>. 5 min.
+          </div>
+        </li>
+        <li style="display:flex;gap:12px;align-items:start;">
+          <span style="background:#C9972B;color:white;font-weight:800;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;">3</span>
+          <div>
+            <strong>Toggle mensual/anual en pricing</strong> — State simple en React, dos sets de precios. Añadir badge "Ahorra 2 meses" en switch anual. 2 h.
+          </div>
+        </li>
+        <li style="display:flex;gap:12px;align-items:start;">
+          <span style="background:#C9972B;color:white;font-weight:800;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;">4</span>
+          <div>
+            <strong>Atribución a métricas</strong> — Añadir "basado en X campañas 2025" bajo el bloque de KPIs. 10 min.
+          </div>
+        </li>
+        <li style="display:flex;gap:12px;align-items:start;">
+          <span style="background:#C9972B;color:white;font-weight:800;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;">5</span>
+          <div>
+            <strong>Tabs de sector interactivos</strong> — Añadir <code>useState</code> en la sección de sectores, mostrar contenido diferente por sector al hacer click. 3–4 h.
+          </div>
+        </li>
+      </ol>
+    </div>
+  </div>
+
+</div>
+
+<div class="report-footer">
+  <p>MusicDibs Enterprise · UX Audit — Mayo 2026 · by iCommunity Labs · <a href="https://enterprise.musicdibs.com">enterprise.musicdibs.com</a></p>
+</div>
+
+</body>
+</html>

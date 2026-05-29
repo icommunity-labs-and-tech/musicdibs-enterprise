@@ -56,6 +56,7 @@ export interface Campaign {
   contact_list_id: string | null
   cost_estimate: number | null
   mailerlite_campaign_id: string | null
+  audio_url: string | null
   sent_at: string | null
   created_at: string
   updated_at: string

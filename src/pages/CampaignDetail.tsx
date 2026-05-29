@@ -351,6 +351,41 @@ export function CampaignDetail() {
         </div>
       )}
 
+      {/* audio player — shown when audio is ready */}
+      {c.audio_url ? (
+        <div className="bg-white dark:bg-night-800 border border-sand-200 dark:border-night-700 rounded-2xl p-5">
+          <p className="text-xs font-semibold text-sand-900/40 dark:text-night-50/40 uppercase tracking-wide mb-3">
+            Audio generado
+          </p>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: '#2BB5A022', color: '#0D7A64' }}>
+              <i className="ti ti-music text-base" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <audio
+                controls
+                src={c.audio_url}
+                className="w-full h-8"
+                style={{ accentColor: '#2BB5A0' }}
+              />
+            </div>
+            <a
+              href={c.audio_url}
+              download
+              className="p-2 rounded-lg hover:bg-sand-50 dark:hover:bg-night-700 text-sand-900/50 dark:text-night-50/50 transition-colors"
+              title="Descargar audio"
+            >
+              <i className="ti ti-download text-base" />
+            </a>
+          </div>
+        </div>
+      ) : (c.status === 'generating' || c.status === 'queued') ? (
+        <div className="bg-sand-50 dark:bg-night-700/40 rounded-2xl p-5 flex items-center gap-3 text-sm text-sand-900/50 dark:text-night-50/50">
+          <i className="ti ti-loader-2 animate-spin text-lg shrink-0" style={{ color: '#2BB5A0' }} />
+          {c.status === 'generating' ? 'Generando audio con KIE.ai…' : 'En cola — la generación comenzará en breve.'}
+        </div>
+      ) : null}
+
       {/* two-column layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
