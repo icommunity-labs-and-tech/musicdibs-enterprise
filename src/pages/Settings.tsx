@@ -527,6 +527,7 @@ export function Settings() {
   const [brevoKey, setBrevoKey] = useState('')
   const [mailingProvider, setMailingProvider] = useState<'mailerlite' | 'brevo'>('mailerlite')
   const [integrations, setIntegrations] = useState<TenantSettings['integrations']>({})
+  const [senderStatus, setSenderStatus] = useState<{ verified: boolean; email: string | null; checking: boolean } | null>(null)
 
   useEffect(() => {
     if (tenant) { setOrgName(tenant.name ?? ''); setOrgVertical(tenant.vertical ?? 'insurance') }
@@ -697,7 +698,44 @@ export function Settings() {
             placeholder="xkeysib-…"
           />
         )}
-        <div className="flex justify-end pt-3">
+        {/* Sender verification */}
+        {senderStatus && (
+          <div className={cn(
+            'mt-3 flex items-start gap-2.5 p-3 rounded-xl text-sm',
+            senderStatus.verified
+              ? 'bg-emerald-50 dark:bg-emerald-900/15 text-emerald-700 dark:text-emerald-400'
+              : 'bg-orange-50 dark:bg-orange-900/15 text-orange-700 dark:text-orange-400'
+          )}>
+            <i className={cn('text-base mt-0.5 shrink-0', senderStatus.verified ? 'ti ti-circle-check' : 'ti ti-alert-triangle')} />
+            <div>
+              {senderStatus.verified
+                ? <><span className="font-semibold">Sender verificado:</span> {senderStatus.email}</>
+                : <><span className="font-semibold">Sin sender verificado.</span> Ve a tu cuenta de {mailingProvider === 'brevo' ? 'Brevo' : 'MailerLite'} y verifica tu email remitente antes de enviar campañas.</>
+              }
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between pt-3 gap-3">
+          <button
+            onClick={async () => {
+              setSenderStatus(s => s ? { ...s, checking: true } : { verified: false, email: null, checking: true })
+              try {
+                const { data, error } = await supabase.functions.invoke('verify-sender-email')
+                if (error) throw error
+                setSenderStatus({ verified: data.verified, email: data.email, checking: false })
+              } catch {
+                setSenderStatus(null)
+              }
+            }}
+            disabled={senderStatus?.checking}
+            className="flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-xl border border-black/10 dark:border-white/10 hover:bg-black/4 dark:hover:bg-white/4 text-sand-900/70 dark:text-night-50/70 transition-colors disabled:opacity-50"
+          >
+            {senderStatus?.checking
+              ? <><i className="ti ti-loader-2 animate-spin text-sm" /> Verificando…</>
+              : <><i className="ti ti-mail-check text-sm" /> Verificar sender</>
+            }
+          </button>
           <button onClick={() => saveKeys.mutate()} disabled={saveKeys.isPending}
             className="text-sm font-medium px-5 py-2 rounded-xl bg-sand-900 dark:bg-night-50 text-white dark:text-night-900 hover:opacity-90 disabled:opacity-50 transition-opacity">
             Guardar

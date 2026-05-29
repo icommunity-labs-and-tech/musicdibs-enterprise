@@ -5,6 +5,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { useToast } from '@/store/toastStore'
 import { cn } from '@/lib/utils'
 
 interface Notification {
@@ -29,6 +30,7 @@ const TYPE_STYLES: Record<Notification['type'], { icon: string; cls: string }> =
 export function NotificationCenter() {
   const { tenant } = useAuth()
   const qc = useQueryClient()
+  const toast = useToast()
   const [open, setOpen] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
 
@@ -57,17 +59,30 @@ export function NotificationCenter() {
     },
   })
 
-  // Realtime: new notifications
+  // Realtime: new notifications + toast
   useEffect(() => {
     if (!tenant?.id) return
     const channel = supabase
       .channel(`notifications-${tenant.id}`)
-      .on('postgres_changes', {
-        event: 'INSERT', schema: 'public', table: 'notifications',
-        filter: `tenant_id=eq.${tenant.id}`,
-      }, () => {
-        qc.invalidateQueries({ queryKey: ['notifications', tenant.id] })
-      })
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'notifications', filter: `tenant_id=eq.${tenant.id}` },
+        (payload) => {
+          qc.invalidateQueries({ queryKey: ['notifications', tenant.id] })
+          // Show toast for actionable notification types
+          const n = payload.new as Notification
+          if (!n) return
+          const isSuccess = n.type === 'campaign_ready' || n.type === 'payment_success'
+          const isError   = n.type === 'campaign_failed' || n.type === 'payment_failed'
+          if (isSuccess) {
+            toast.success(n.title, n.body ?? undefined)
+          } else if (isError) {
+            toast.error(n.title, n.body ?? undefined)
+          } else {
+            toast.info(n.title, n.body ?? undefined)
+          }
+        }
+      )
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [tenant?.id])

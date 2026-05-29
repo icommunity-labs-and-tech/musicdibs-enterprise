@@ -1,5 +1,5 @@
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { formatDistanceToNow, format } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -149,6 +149,7 @@ export function CampaignDetail() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [sending, setSending] = useState(false)
   const [syncing, setSyncing] = useState(false)
+  const [senderVerified, setSenderVerified] = useState<boolean | null>(null)
 
   const syncStats = useCallback(async (campaignId: string) => {
     setSyncing(true)
@@ -164,6 +165,14 @@ export function CampaignDetail() {
       setSyncing(false)
     }
   }, [tenant?.id, qc, toast])
+
+  // Check sender verification when campaign is ready to send
+  useEffect(() => {
+    if (!data?.campaign || data.campaign.status !== 'ready') return
+    supabase.functions.invoke('verify-sender-email')
+      .then(({ data: res }) => setSenderVerified(res?.verified ?? null))
+      .catch(() => setSenderVerified(null))
+  }, [data?.campaign?.status])
 
   async function sendCampaign() {
     if (!c) return
@@ -326,6 +335,20 @@ export function CampaignDetail() {
           </div>
         </div>
       </div>
+
+      {/* sender verification warning — only when ready to send */}
+      {c.status === 'ready' && senderVerified === false && (
+        <div className="flex items-start gap-3 p-4 rounded-2xl bg-orange-50 dark:bg-orange-900/15 border border-orange-200 dark:border-orange-700/40">
+          <i className="ti ti-mail-off text-lg text-orange-500 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-orange-700 dark:text-orange-400">Sender no verificado</p>
+            <p className="text-xs text-orange-600/80 dark:text-orange-400/70 mt-0.5">
+              No tienes ningún email remitente verificado en tu proveedor de mailing. El envío fallará.
+              Verifica tu sender en <Link to="/settings" className="underline font-medium">Configuración → Entrega de email</Link> antes de continuar.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* performance stats — only if sent/ready with data */}
       {hasStats ? (

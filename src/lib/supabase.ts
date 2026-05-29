@@ -142,12 +142,11 @@ export interface AuditLog {
 export interface Notification {
   id: string
   tenant_id: string
-  user_id: string | null
   type: string
   title: string
   body: string | null
   read: boolean
-  href: string | null
+  link: string | null
   created_at: string
 }
 
@@ -171,7 +170,7 @@ export interface Database {
       contact_lists:        { Row: ContactList;         Insert: Omit<ContactList, 'id' | 'created_at' | 'updated_at'> }
       contact_list_members: { Row: ContactListMember;   Insert: Omit<ContactListMember, 'id' | 'added_at'> }
       audit_log:            { Row: AuditLog;            Insert: Omit<AuditLog, 'id' | 'created_at'> }
-      notifications:        { Row: Notification;        Insert: Omit<Notification, 'id' | 'created_at'> }
+      notifications:        { Row: Notification;        Insert: Omit<Notification, 'id' | 'created_at'>; Update: Partial<Omit<Notification, 'id' | 'tenant_id' | 'created_at'>> }
       tenant_settings:      { Row: TenantSetting;       Insert: Omit<TenantSetting, 'id' | 'updated_at'> }
     }
   }
