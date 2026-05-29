@@ -150,11 +150,33 @@ Deno.serve(async (req: Request) => {
       tenant_id: tenantId,
       type: "campaign_ready",
       title: "Campaña enviada",
-      body: `"${campaign.name}" se ha enviado a Mailerlite correctamente.`,
+      body: `"${campaign.name}" se ha enviado correctamente.`,
       link: `/campaigns/${campaign_id}`,
     })
 
-    console.log(`Campaign ${campaign_id} sent. ML campaign id: ${mlCampaignId}`)
+    // ── Dispatch webhook event (fire-and-forget) ──────────────────────────────
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!
+    const serviceKey  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    fetch(`${supabaseUrl}/functions/v1/webhook-dispatcher`, {
+      method: "POST",
+      headers: {
+        "Content-Type":  "application/json",
+        "Authorization": `Bearer ${serviceKey}`,
+      },
+      body: JSON.stringify({
+        tenant_id: tenantId,
+        event: "campaign.sent",
+        payload: {
+          campaign_id,
+          campaign_name:     campaign.name,
+          mailerlite_campaign_id: mlCampaignId,
+          total_contacts:    campaign.total_contacts,
+          sent_at:           new Date().toISOString(),
+        },
+      }),
+    }).catch(e => console.warn("[send-campaign] webhook-dispatcher fire failed:", e))
+
+    console.log(`Campaign ${campaign_id} sent. ML/Brevo campaign id: ${mlCampaignId}`)
     return json({ success: true, mailerlite_campaign_id: mlCampaignId })
 
   } catch (err) {

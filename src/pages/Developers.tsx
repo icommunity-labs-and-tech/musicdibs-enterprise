@@ -115,18 +115,15 @@ export function Developers() {
   const [wbFreshSecret, setWbFreshSecret] = useState<string | null>(null)
   const [selectedWebhook, setSelectedWebhook] = useState<string | null>(null)
 
-  // ── API keys query ──────────────────────────────────────────────────────
+  // ── API keys query (via EF) ─────────────────────────────────────────────
   const { data: keys = [] } = useQuery<ApiKey[]>({
     queryKey: ['api_keys', tenant?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tenant_api_keys')
-        .select('id, name, key_prefix, last_used_at, created_at, revoked_at')
-        .eq('tenant_id', tenant!.id)
-        .is('revoked_at', null)
-        .order('created_at', { ascending: false })
+      const { data, error } = await supabase.functions.invoke('manage-api-keys', {
+        body: { action: 'list' },
+      })
       if (error) throw error
-      return data ?? []
+      return (data?.keys ?? []).filter((k: ApiKey) => !k.revoked_at)
     },
     enabled: !!tenant,
   })
@@ -217,29 +214,15 @@ export function Developers() {
     onError: (err: any) => toast.error('Error', err.message),
   })
 
-  // ── generate API key ────────────────────────────────────────────────────
+  // ── generate API key (via EF — enforces limit, audit log, mdb_live_ prefix) ─
   const generateKey = useMutation({
     mutationFn: async (name: string) => {
-      // Generate secure random key: sk_live_ + 40 random chars
-      const raw = 'sk_live_' + Array.from(
-        crypto.getRandomValues(new Uint8Array(30))
-      ).map(b => b.toString(36)).join('').slice(0, 40)
-
-      const prefix = raw.slice(0, 16) // "sk_live_xxxxxxxx"
-
-      // Hash for storage
-      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw))
-      const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('')
-
-      const { error } = await supabase.from('tenant_api_keys').insert({
-        tenant_id: tenant!.id,
-        name: name || 'Default',
-        key_hash: hash,
-        key_prefix: prefix,
-        created_by: user!.id,
+      const { data, error } = await supabase.functions.invoke('manage-api-keys', {
+        body: { action: 'create', name: name || 'API Key' },
       })
       if (error) throw error
-      return raw
+      if (data?.error) throw new Error(data.error)
+      return data.raw_key as string
     },
     onSuccess: (raw) => {
       setFreshKey(raw)
@@ -251,14 +234,14 @@ export function Developers() {
     onError: (err: any) => toast.error('Error generando key', err.message),
   })
 
-  // ── revoke API key ──────────────────────────────────────────────────────
+  // ── revoke API key (via EF — audit log) ────────────────────────────────
   const revokeKey = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('tenant_api_keys')
-        .update({ revoked_at: new Date().toISOString() })
-        .eq('id', id)
+      const { data, error } = await supabase.functions.invoke('manage-api-keys', {
+        body: { action: 'revoke', key_id: id },
+      })
       if (error) throw error
+      if (data?.error) throw new Error(data.error)
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['api_keys'] })
